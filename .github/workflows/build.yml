@@ -1,0 +1,31 @@
+name: Build Tweak
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@main
+
+      - name: Checkout theos/theos
+        uses: actions/checkout@main
+        with:
+          repository: theos/theos
+          ref: master
+          submodules: recursive
+          path: theos
+
+      - name: Build Package
+        run: |
+          brew install make xz ldid
+          export THEOS=theos
+          make package
+
+      - name: Upload .dylib
+        uses: actions/upload-artifact@v3
+        with:
+          name: ESPBox_dylib
+          path: .theos/obj/debug/*.dylib
