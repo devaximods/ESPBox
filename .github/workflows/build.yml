@@ -2,7 +2,6 @@ name: Build Tweak
 
 on:
   push:
-    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -12,8 +11,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Theos dependencies
-        run: |
-          brew install ldid xz
+        run: brew install ldid xz
 
       - name: Checkout Theos
         uses: actions/checkout@v4
@@ -36,5 +34,5 @@ jobs:
       - name: Upload .dylib
         uses: actions/upload-artifact@v4
         with:
-          name: ESPBox_dylib
+          name: TestMenu_dylib
           path: .theos/obj/debug/*.dylib
