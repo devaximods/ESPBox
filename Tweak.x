@@ -14,20 +14,18 @@ static UIColor* NeonRed() {
     return [UIColor colorWithRed:1.0 green:0.2 blue:0.3 alpha:1.0];
 }
 
-// ============ FONCTION POUR OBTENIR LA KEY WINDOW (moderne) ============
+// ============ FONCTION POUR OBTENIR LA KEY WINDOW (moderne iOS 13+) ============
 static UIWindow* GetKeyWindow() {
-    if (@available(iOS 13.0, *)) {
-        for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
-            if (scene.activationState == UISceneActivationStateForegroundActive) {
-                for (UIWindow *window in scene.windows) {
-                    if (window.isKeyWindow) {
-                        return window;
-                    }
+    for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
+        if (scene.activationState == UISceneActivationStateForegroundActive) {
+            for (UIWindow *window in scene.windows) {
+                if (window.isKeyWindow) {
+                    return window;
                 }
             }
         }
     }
-    return [UIApplication sharedApplication].keyWindow;
+    return nil;
 }
 
 // ============ ACTIONS DES BOUTONS ============
@@ -237,7 +235,7 @@ static void CreateStylishMenu() {
         UIButton *btnCredits = [UIButton buttonWithType:UIButtonTypeSystem];
         btnCredits.frame = CGRectMake(15, 175, menuWidth - 30, 35);
         btnCredits.backgroundColor = [UIColor clearColor];
-        [btnCredits setTitle:@"SNPXXXMODZ🧬" forState:UIControlStateNormal];
+        [btnCredits setTitle:@"👤 NEXUS TEAM" forState:UIControlStateNormal];
         [btnCredits setTitleColor:[UIColor colorWithWhite:0.6 alpha:1] forState:UIControlStateNormal];
         btnCredits.titleLabel.font = [UIFont systemFontOfSize:10];
         [menuView addSubview:btnCredits];
