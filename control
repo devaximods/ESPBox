@@ -1,0 +1,8 @@
+Package: com.test.testmenu
+Name: TestMenu
+Version: 1.0
+Architecture: iphoneos-arm64
+Description: Stylish Mod Menu
+Maintainer: test
+Author: test
+Section: Tweaks
