@@ -1,11 +1,10 @@
-TARGET := iphone:clang:latest:7.0
+export TARGET = iphone:latest:15.0
+export ARCHS = arm64e
 
 include $(THEOS)/makefiles/common.mk
 
-TWEAK_NAME = ESPBox1
-ESPBox1_FILES = Tweak.x
-ESPBox1_FILES = Tweak.x
-ESPBox1_CFLAGS = -fobjc-arc
+TWEAK_NAME = TestMenu
+TestMenu_FILES = Tweak.x
+TestMenu_FRAMEWORKS = UIKit Foundation CoreGraphics QuartzCore
 
-include $(THEOS_MAKE_PATH)/tweak.mk
-ESPBox1_FRAMEWORKS = UIKit Foundation CoreGraphics
+include $(THEOS)/makefiles/tweak.mk
