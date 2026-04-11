@@ -14,7 +14,7 @@ static UIColor* NeonRed() {
     return [UIColor colorWithRed:1.0 green:0.2 blue:0.3 alpha:1.0];
 }
 
-// ============ FONCTION POUR OBTENIR LA KEY WINDOW (moderne iOS 13+) ============
+// ============ FONCTION POUR OBTENIR LA KEY WINDOW ============
 static UIWindow* GetKeyWindow() {
     for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
         if (scene.activationState == UISceneActivationStateForegroundActive) {
@@ -29,7 +29,7 @@ static UIWindow* GetKeyWindow() {
 }
 
 // ============ ACTIONS DES BOUTONS ============
-static void ShowESP_PPX() {
+__attribute__((used)) static void ShowESP_PPX() {
     dispatch_async(dispatch_get_main_queue(), ^{
         UIWindow *keyWindow = GetKeyWindow();
         if (!keyWindow) return;
@@ -57,7 +57,7 @@ static void ShowESP_PPX() {
     });
 }
 
-static void ShowESP_BOX() {
+__attribute__((used)) static void ShowESP_BOX() {
     dispatch_async(dispatch_get_main_queue(), ^{
         UIWindow *keyWindow = GetKeyWindow();
         if (!keyWindow) return;
@@ -86,14 +86,14 @@ static void ShowESP_BOX() {
 }
 
 // ============ EFFETS BOUTONS ============
-static void ButtonTouchDown(UIButton *sender) {
+__attribute__((used)) static void ButtonTouchDown(UIButton *sender) {
     [UIView animateWithDuration:0.1 animations:^{
         sender.transform = CGAffineTransformMakeScale(0.95, 0.95);
         sender.backgroundColor = [UIColor colorWithWhite:0.25 alpha:1];
     }];
 }
 
-static void ButtonTouchUp(UIButton *sender) {
+__attribute__((used)) static void ButtonTouchUp(UIButton *sender) {
     [UIView animateWithDuration:0.1 animations:^{
         sender.transform = CGAffineTransformIdentity;
         sender.backgroundColor = [UIColor colorWithWhite:0.15 alpha:1];
@@ -101,7 +101,7 @@ static void ButtonTouchUp(UIButton *sender) {
 }
 
 // ============ DRAG MENU ============
-static void DragMenu(UIPanGestureRecognizer *gesture) {
+__attribute__((used)) static void DragMenu(UIPanGestureRecognizer *gesture) {
     CGPoint translation = [gesture translationInView:menuWindow];
     CGRect newFrame = menuWindow.frame;
     newFrame.origin.x += translation.x;
