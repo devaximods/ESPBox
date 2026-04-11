@@ -5,16 +5,25 @@
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     BOOL result = %orig;
     
-    // Attendre 1 seconde que l'application soit prête
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-        // Créer l'alerte
+    // Créer une fenêtre temporaire pour l'alerte
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UIWindow *tempWindow = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
+        tempWindow.windowLevel = UIWindowLevelAlert + 1;
+        tempWindow.backgroundColor = [UIColor clearColor];
+        tempWindow.hidden = NO;
+        
+        UIViewController *tempVC = [[UIViewController alloc] init];
+        tempWindow.rootViewController = tempVC;
+        
         UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"✅ TEST" 
                                                                        message:@"DYLIB ACTIF" 
                                                                 preferredStyle:UIAlertControllerStyleAlert];
-        [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
+        [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+            tempWindow.hidden = YES;
+            tempWindow = nil;
+        }]];
         
-        // Méthode simple pour afficher l'alerte
-        [application.keyWindow.rootViewController presentViewController:alert animated:YES completion:nil];
+        [tempVC presentViewController:alert animated:YES completion:nil];
     });
     
     return result;
