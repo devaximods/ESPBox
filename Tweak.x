@@ -1,15 +1,11 @@
-#import <UIKit/UIKit.h>
-
 %hook AppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     BOOL result = %orig;
     
-    // Écrire dans la console (visible dans Xcode ou Console.app)
-    NSLog(@"========================================");
-    NSLog(@"✅ STANDOFF 2 - DYLIB INJECTÉ AVEC SUCCÈS !");
-    NSLog(@"✅ Menu de test chargé");
-    NSLog(@"========================================");
+    // Créer un fichier sur l'iPhone pour confirmer l'injection
+    NSString *path = @"/tmp/standoff2_injected.txt";
+    [@"INJECTED" writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:nil];
     
     return result;
 }
