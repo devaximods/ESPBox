@@ -1,0 +1,8 @@
+Package: com.test.testmenu
+Name: TestMenu
+Version: 1.0
+Architecture: iphoneos-arm64
+Description: Menu de test pour injection
+Maintainer: nexus
+Author: nexus
+Section: Tweaks
