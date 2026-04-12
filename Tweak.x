@@ -1,4 +1,4 @@
-%#import <UIKit/UIKit.h>
+#import <UIKit/UIKit.h>
 #import <QuartzCore/QuartzCore.h>
 
 static UIWindow *menuWindow = nil;
