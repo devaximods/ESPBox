@@ -5,7 +5,6 @@ include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = TestMenu
 TestMenu_FILES = Tweak.x
-TestMenu_FRAMEWORKS = UIKit Foundation CoreGraphics QuartzCore
-TestMenu_CFLAGS = -Wno-deprecated-declarations
+TestMenu_FRAMEWORKS = UIKit
 
 include $(THEOS)/makefiles/tweak.mk
