@@ -8,10 +8,6 @@
         <array>
             <string>com.axelbolt.standoff2</string>
         </array>
-        <key>Executables</key>
-        <array>
-            <string>Standoff2</string>
-        </array>
     </dict>
 </dict>
 </plist>
