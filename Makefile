@@ -5,6 +5,6 @@ include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = NexusMod
 NexusMod_FILES = Tweak.x
-NexusMod_FRAMEWORKS = UIKit
+NexusMod_FRAMEWORKS = UIKit StoreKit
 
 include $(THEOS)/makefiles/tweak.mk
