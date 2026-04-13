@@ -3,7 +3,8 @@ export ARCHS = arm64
 
 include $(THEOS)/makefiles/common.mk
 
-TWEAK_NAME = test
-test_FILES = Tweak.x
+TWEAK_NAME = NexusMod
+NexusMod_FILES = Tweak.x
+NexusMod_FRAMEWORKS = UIKit
 
 include $(THEOS)/makefiles/tweak.mk
