@@ -3,19 +3,12 @@
 %hook AppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    BOOL result = %orig;
-    
-    dispatch_async(dispatch_get_main_queue(), ^{
-        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"✅ TEST" 
-                                                                       message:@"DYLIB INJECTÉ" 
-                                                                preferredStyle:UIAlertControllerStyleAlert];
-        [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
-        
-        UIWindow *keyWindow = [UIApplication sharedApplication].keyWindow;
-        [keyWindow.rootViewController presentViewController:alert animated:YES completion:nil];
-    });
-    
-    return result;
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Test" 
+                                                                   message:@"EHHHHHH MERCIIIIIIII HINDOUUUUUU" 
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+    [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
+    [application.keyWindow.rootViewController presentViewController:alert animated:YES completion:nil];
+    return %orig;
 }
 
 %end
