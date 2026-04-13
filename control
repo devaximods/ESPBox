@@ -2,7 +2,7 @@ Package: com.nexus.mod
 Name: NexusMod
 Version: 1.0
 Architecture: iphoneos-arm64
-Description: Nexus Mod Menu
-Maintainer: nexus
-Author: nexus
+Description: Nexus Mod Menu avec login
+Maintainer: Nexus
+Author: Nexus
 Section: Tweaks
