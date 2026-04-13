@@ -1,8 +1,8 @@
-Package: com.test.test
-Name: test
+Package: com.nexus.mod
+Name: NexusMod
 Version: 1.0
 Architecture: iphoneos-arm64
-Description: Test
-Maintainer: test
-Author: test
+Description: Nexus Mod Menu
+Maintainer: nexus
+Author: nexus
 Section: Tweaks
