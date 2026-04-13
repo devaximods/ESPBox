@@ -1,16 +1,14 @@
-// Tweak.xm - MENU LOGIN + SWITCHES - VERSION CORRIGÉE 2026 (XSNPOWWWWWW Edition)
+// Tweak.xm - MENU LOGIN + SWITCHES - VERSION FINALE CORRIGÉE 2026 (XSNPOWWWWWW)
 
 #import <UIKit/UIKit.h>
-#import <StoreKit/StoreKit.h>   // ← IMPORTANT pour SKPaymentQueue & SKPayment
+#import <StoreKit/StoreKit.h>
 
-// Variables globales
 BOOL isLoggedIn = NO;
 BOOL espBoxEnabled = NO;
 BOOL espLineEnabled = NO;
 BOOL espDistanceEnabled = NO;
 BOOL ppxEnabled = NO;
 
-// Menu principal
 @interface MenuViewController : UIViewController
 @property (nonatomic, strong) UITextField *usernameField;
 @property (nonatomic, strong) UITextField *passwordField;
@@ -34,7 +32,6 @@ BOOL ppxEnabled = NO;
     [self.view addSubview:title];
     
     if (!isLoggedIn) {
-        // Login screen
         self.usernameField = [[UITextField alloc] initWithFrame:CGRectMake(50, 150, self.view.frame.size.width - 100, 40)];
         self.usernameField.placeholder = @"Username (nexus ou admin)";
         self.usernameField.borderStyle = UITextBorderStyleRoundedRect;
@@ -58,7 +55,6 @@ BOOL ppxEnabled = NO;
         [loginButton addTarget:self action:@selector(loginAction) forControlEvents:UIControlEventTouchUpInside];
         [self.view addSubview:loginButton];
     } else {
-        // Switches après login
         [self createSwitchWithLabel:@"ESP Box" y:120 action:@selector(toggleEspBox) switchVar:&espBoxEnabled];
         [self createSwitchWithLabel:@"ESP Line" y:170 action:@selector(toggleEspLine) switchVar:&espLineEnabled];
         [self createSwitchWithLabel:@"ESP Distance" y:220 action:@selector(toggleEspDistance) switchVar:&espDistanceEnabled];
@@ -103,9 +99,6 @@ BOOL ppxEnabled = NO;
             UIViewController *root = [self getRootViewController];
             [root presentViewController:newMenu animated:YES completion:nil];
         }];
-    } else {
-        // Feedback visuel si mauvais login
-        self.view.backgroundColor = [UIColor redColor];
     }
 }
 
@@ -119,52 +112,44 @@ BOOL ppxEnabled = NO;
     [self dismissViewControllerAnimated:YES completion:nil];
 }
 
-// Fonction safe pour récupérer le rootViewController iOS 13+
 - (UIViewController *)getRootViewController {
-    UIWindowScene *activeScene = nil;
     for (UIScene *scene in [UIApplication sharedApplication].connectedScenes) {
         if ([scene isKindOfClass:[UIWindowScene class]] && 
             ((UIWindowScene *)scene).activationState == UISceneActivationStateForegroundActive) {
-            activeScene = (UIWindowScene *)scene;
-            break;
+            return ((UIWindowScene *)scene).keyWindow.rootViewController;
         }
     }
-    return activeScene.keyWindow.rootViewController;
+    return nil;
 }
 
 @end
 
-// Hook pour afficher le menu au lancement
 %hook UIWindowScene
 - (void)sceneDidBecomeActive:(UIScene *)scene {
     %orig;
-    
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             if (!isLoggedIn) {
                 MenuViewController *menu = [[MenuViewController alloc] init];
                 UIViewController *root = [menu getRootViewController];
-                if (root) {
-                    [root presentViewController:menu animated:YES completion:nil];
-                }
+                if (root) [root presentViewController:menu animated:YES completion:nil];
             }
         });
     });
 }
 %end
 
-// Hook PPX (achats gratuits)
 %hook SKPaymentQueue
 - (void)addPayment:(SKPayment *)payment {
     if (ppxEnabled) {
-        NSLog(@"[XSNPOWWWWWW] PPX ACTIVÉ - Achat gratuit pour %@ ! 🍆💰", payment.productIdentifier);
-        return;  // On skip l'achat réel
+        NSLog(@"[XSNPOWWWWWW] PPX - Achat gratuit activé pour %@", payment.productIdentifier);
+        return;
     }
     %orig;
 }
 %end
 
 %ctor {
-    NSLog(@"[XSNPOWWWWWW] DYLIB INJECTÉ AVEC SUCCÈS - MENU PRÊT À TE FAIRE BANDER 🔥");
+    NSLog(@"[XSNPOWWWWWW] DYLIB INJECTÉ - MENU LOGIN PRÊT À TE FAIRE JOUIR 🔥");
 }
