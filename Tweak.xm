@@ -1,285 +1,195 @@
+// Tweak.xm - XSNPMODZ MENU CACHÉ 3 CLICS + LOGIN CODE UNIQUE + 3 SECTIONS STYLÉES
+
 #import <UIKit/UIKit.h>
 #import <StoreKit/StoreKit.h>
-#import <QuartzCore/QuartzCore.h>
 
-// ============ COULEURS ============
-#define NEON_GREEN [UIColor colorWithRed:0.0 green:1.0 blue:0.5 alpha:1.0]
-#define NEON_RED [UIColor colorWithRed:1.0 green:0.2 blue:0.3 alpha:1.0]
-#define NEON_BLUE [UIColor colorWithRed:0.2 green:0.5 blue:1.0 alpha:1.0]
-#define NEON_PINK [UIColor colorWithRed:1.0 green:0.3 blue:0.8 alpha:1.0]
-#define DARK_BG [UIColor colorWithRed:0.05 green:0.05 blue:0.12 alpha:0.95]
+// Variables
+BOOL isLoggedIn = NO;
+BOOL espBoxEnabled = NO;
+BOOL espLineEnabled = NO;
+BOOL espDistanceEnabled = NO;
+BOOL aimbotEnabled = NO;
+BOOL ppxEnabled = NO;
+int clickCount = 0;
 
-// ============ VARIABLES ============
-static BOOL isLoggedIn = NO;
-static BOOL espBox = NO;
-static BOOL espLine = NO;
-static BOOL espDistance = NO;
-static BOOL aimbot = NO;
-static BOOL ppx = NO;
-
-static UIButton *floatingBtn = nil;
-static UIView *menuView = nil;
-
-// ============ BOUTON FLOTTANT ============
-@interface StylishButton : UIButton
+// === BOUTON FLOTTANT CACHÉ ===
+@interface FloatingButton : UIButton
 @end
 
-@implementation StylishButton
+@implementation FloatingButton
 - (instancetype)initWithFrame:(CGRect)frame {
     self = [super initWithFrame:frame];
     if (self) {
-        self.backgroundColor = NEON_RED;
-        self.layer.cornerRadius = 30;
-        self.layer.shadowColor = NEON_RED.CGColor;
-        self.layer.shadowOffset = CGSizeZero;
-        self.layer.shadowRadius = 10;
-        self.layer.shadowOpacity = 0.8;
-        [self setTitle:@"⚡" forState:UIControlStateNormal];
-        self.titleLabel.font = [UIFont systemFontOfSize:32 weight:UIFontWeightBold];
+        self.backgroundColor = [UIColor colorWithRed:1.0 green:0.0 blue:0.0 alpha:0.0]; // Invisible au départ
+        self.layer.cornerRadius = 22;
+        [self setTitle:@"" forState:UIControlStateNormal];
         
-        UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(drag:)];
-        [self addGestureRecognizer:pan];
-        [self addTarget:self action:@selector(toggleMenu) forControlEvents:UIControlEventTouchUpInside];
-        
-        // Animation pulsante
-        CABasicAnimation *pulse = [CABasicAnimation animationWithKeyPath:@"transform.scale"];
-        pulse.duration = 0.8;
-        pulse.fromValue = @1.0;
-        pulse.toValue = @1.1;
-        pulse.autoreverses = YES;
-        pulse.repeatCount = HUGE_VALF;
-        [self.layer addAnimation:pulse forKey:@"pulse"];
+        UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTripleTap)];
+        tap.numberOfTapsRequired = 3;
+        [self addGestureRecognizer:tap];
     }
     return self;
 }
-- (void)drag:(UIPanGestureRecognizer *)g {
-    CGPoint t = [g translationInView:self.superview];
-    self.center = CGPointMake(self.center.x + t.x, self.center.y + t.y);
-    [g setTranslation:CGPointZero inView:self.superview];
-}
-- (void)toggleMenu {
-    if (menuView && menuView.superview) {
-        [UIView animateWithDuration:0.3 animations:^{
-            menuView.transform = CGAffineTransformMakeScale(0.01, 0.01);
-            menuView.alpha = 0;
-        } completion:^(BOOL finished) {
-            [menuView removeFromSuperview];
-            menuView = nil;
-        }];
-    } else {
-        [self showMenu];
+
+- (void)handleTripleTap {
+    clickCount++;
+    if (clickCount >= 3) {
+        clickCount = 0;
+        [self showLogin];
     }
 }
-- (void)showMenu {
+
+- (void)showLogin {
+    XSNPMODZLogin *login = [[XSNPMODZLogin alloc] init];
+    login.modalPresentationStyle = UIModalPresentationOverFullScreen;
     UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
-    if (!root) return;
-    
-    menuView = [[UIView alloc] initWithFrame:CGRectMake(20, 100, 320, 480)];
-    menuView.backgroundColor = DARK_BG;
-    menuView.layer.cornerRadius = 25;
-    menuView.layer.borderWidth = 1;
-    menuView.layer.borderColor = NEON_GREEN.CGColor;
-    menuView.layer.shadowColor = NEON_GREEN.CGColor;
-    menuView.layer.shadowOffset = CGSizeZero;
-    menuView.layer.shadowRadius = 15;
-    menuView.layer.shadowOpacity = 0.5;
-    menuView.transform = CGAffineTransformMakeScale(0.01, 0.01);
-    menuView.alpha = 0;
-    
-    // Effet glassmorphism
-    UIBlurEffect *blur = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
-    UIVisualEffectView *blurView = [[UIVisualEffectView alloc] initWithEffect:blur];
-    blurView.frame = menuView.bounds;
-    blurView.layer.cornerRadius = 25;
-    blurView.clipsToBounds = YES;
-    [menuView addSubview:blurView];
-    
-    // Bandeau néon haut
-    UIView *neonTop = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 320, 3)];
-    neonTop.backgroundColor = NEON_GREEN;
-    neonTop.layer.shadowColor = NEON_GREEN.CGColor;
-    neonTop.layer.shadowRadius = 5;
-    neonTop.layer.shadowOpacity = 1;
-    [menuView addSubview:neonTop];
-    
-    // Titre
-    UILabel *title = [[UILabel alloc] initWithFrame:CGRectMake(0, 20, 320, 50)];
-    title.text = @"⚡ XSNPMODZ ⚡";
-    title.textColor = NEON_GREEN;
-    title.font = [UIFont fontWithName:@"HelveticaNeue-Bold" size:28];
-    title.textAlignment = NSTextAlignmentCenter;
-    title.shadowColor = NEON_GREEN;
-    title.shadowOffset = CGSizeZero;
-    [menuView addSubview:title];
-    
-    // Sous-titre
-    UILabel *sub = [[UILabel alloc] initWithFrame:CGRectMake(0, 70, 320, 20)];
-    sub.text = @"PREMIUM MOD MENU";
-    sub.textColor = [UIColor whiteColor];
-    sub.font = [UIFont systemFontOfSize:12];
-    sub.textAlignment = NSTextAlignmentCenter;
-    [menuView addSubview:sub];
-    
-    if (!isLoggedIn) {
-        [self addLoginUI:menuView];
-    } else {
-        [self addSwitchesUI:menuView];
-    }
-    
-    // Bouton fermer
-    UIButton *close = [UIButton buttonWithType:UIButtonTypeSystem];
-    close.frame = CGRectMake(270, 15, 35, 35);
-    close.backgroundColor = [UIColor colorWithWhite:0.2 alpha:1];
-    close.layer.cornerRadius = 17.5;
-    [close setTitle:@"✕" forState:UIControlStateNormal];
-    [close setTitleColor:NEON_RED forState:UIControlStateNormal];
-    close.titleLabel.font = [UIFont boldSystemFontOfSize:18];
-    [close addTarget:self action:@selector(toggleMenu) forControlEvents:UIControlEventTouchUpInside];
-    [menuView addSubview:close];
-    
-    [root.view addSubview:menuView];
-    
-    [UIView animateWithDuration:0.4 delay:0 usingSpringWithDamping:0.7 initialSpringVelocity:0.5 options:0 animations:^{
-        menuView.transform = CGAffineTransformIdentity;
-        menuView.alpha = 1;
-    } completion:nil];
-}
-
-- (void)addLoginUI:(UIView *)parent {
-    UITextField *user = [[UITextField alloc] initWithFrame:CGRectMake(20, 120, 280, 45)];
-    user.placeholder = @"🔑 NOM D'UTILISATEUR";
-    user.borderStyle = UITextBorderStyleRoundedRect;
-    user.backgroundColor = [UIColor colorWithWhite:0.15 alpha:1];
-    user.textColor = [UIColor whiteColor];
-    user.font = [UIFont systemFontOfSize:14];
-    user.tag = 100;
-    [parent addSubview:user];
-    
-    UITextField *pass = [[UITextField alloc] initWithFrame:CGRectMake(20, 180, 280, 45)];
-    pass.placeholder = @"🔒 MOT DE PASSE";
-    pass.secureTextEntry = YES;
-    pass.borderStyle = UITextBorderStyleRoundedRect;
-    pass.backgroundColor = [UIColor colorWithWhite:0.15 alpha:1];
-    pass.textColor = [UIColor whiteColor];
-    pass.font = [UIFont systemFontOfSize:14];
-    pass.tag = 101;
-    [parent addSubview:pass];
-    
-    UIButton *login = [UIButton buttonWithType:UIButtonTypeSystem];
-    login.frame = CGRectMake(20, 250, 280, 50);
-    login.backgroundColor = NEON_GREEN;
-    login.layer.cornerRadius = 25;
-    login.layer.shadowColor = NEON_GREEN.CGColor;
-    login.layer.shadowRadius = 8;
-    login.layer.shadowOpacity = 0.6;
-    [login setTitle:@"🚀 SE CONNECTER" forState:UIControlStateNormal];
-    [login setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
-    login.titleLabel.font = [UIFont boldSystemFontOfSize:16];
-    [login addTarget:self action:@selector(doLogin:) forControlEvents:UIControlEventTouchUpInside];
-    [parent addSubview:login];
-}
-
-- (void)doLogin:(UIButton *)sender {
-    UIView *parent = sender.superview;
-    UITextField *user = [parent viewWithTag:100];
-    UITextField *pass = [parent viewWithTag:101];
-    
-    if (([user.text isEqualToString:@"xsnp"] || [user.text isEqualToString:@"nexus"]) && 
-        ([pass.text isEqualToString:@"1234"] || [pass.text isEqualToString:@"xsn"])) {
-        isLoggedIn = YES;
-        [self toggleMenu];
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.3 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-            [self toggleMenu];
-        });
-    } else {
-        [self shakeView:user];
-        [self shakeView:pass];
-    }
-}
-
-- (void)addSwitchesUI:(UIView *)parent {
-    NSArray *items = @[
-        @{@"name":@"ESP BOX", @"y":@120, @"color":NEON_RED, @"var":&espBox},
-        @{@"name":@"ESP LINE", @"y":@175, @"color":NEON_GREEN, @"var":&espLine},
-        @{@"name":@"ESP DIST", @"y":@230, @"color":NEON_BLUE, @"var":&espDistance},
-        @{@"name":@"AIMBOT", @"y":@285, @"color":NEON_PINK, @"var":&aimbot},
-        @{@"name":@"PPX HACK", @"y":@340, @"color":[UIColor orangeColor], @"var":&ppx}
-    ];
-    
-    for (int i = 0; i < items.count; i++) {
-        NSDictionary *item = items[i];
-        UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(20, [item[@"y"] intValue], 180, 40)];
-        label.text = item[@"name"];
-        label.textColor = item[@"color"];
-        label.font = [UIFont boldSystemFontOfSize:16];
-        [parent addSubview:label];
-        
-        UISwitch *sw = [[UISwitch alloc] initWithFrame:CGRectMake(220, [item[@"y"] intValue], 60, 40)];
-        sw.on = *(BOOL *)item[@"var"];
-        sw.tag = 1000 + i;
-        [sw addTarget:self action:@selector(switchChanged:) forControlEvents:UIControlEventValueChanged];
-        [parent addSubview:sw];
-    }
-    
-    UIButton *apply = [UIButton buttonWithType:UIButtonTypeSystem];
-    apply.frame = CGRectMake(20, 410, 280, 50);
-    apply.backgroundColor = NEON_GREEN;
-    apply.layer.cornerRadius = 25;
-    apply.layer.shadowColor = NEON_GREEN.CGColor;
-    apply.layer.shadowRadius = 8;
-    apply.layer.shadowOpacity = 0.6;
-    [apply setTitle:@"💾 APPLIQUER & FERMER" forState:UIControlStateNormal];
-    [apply setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
-    apply.titleLabel.font = [UIFont boldSystemFontOfSize:16];
-    [apply addTarget:self action:@selector(applyAndClose) forControlEvents:UIControlEventTouchUpInside];
-    [parent addSubview:apply];
-}
-
-- (void)switchChanged:(UISwitch *)sender {
-    switch (sender.tag - 1000) {
-        case 0: espBox = sender.on; break;
-        case 1: espLine = sender.on; break;
-        case 2: espDistance = sender.on; break;
-        case 3: aimbot = sender.on; break;
-        case 4: ppx = sender.on; break;
-    }
-}
-
-- (void)applyAndClose {
-    NSLog(@"[XSNPMODZ] 🔥 ESP: Box=%d Line=%d Dist=%d | Aimbot=%d | PPX=%d", espBox, espLine, espDistance, aimbot, ppx);
-    [self toggleMenu];
-}
-
-- (void)shakeView:(UIView *)view {
-    CABasicAnimation *shake = [CABasicAnimation animationWithKeyPath:@"transform.translation.x"];
-    shake.duration = 0.1;
-    shake.repeatCount = 2;
-    shake.autoreverses = YES;
-    shake.fromValue = @(-5);
-    shake.toValue = @(5);
-    [view.layer addAnimation:shake forKey:@"shake"];
+    [root presentViewController:login animated:YES completion:nil];
 }
 @end
 
-// ============ INIT ============
+// === LOGIN DISCRET AU MILIEU ===
+@interface XSNPMODZLogin : UIViewController
+@property (nonatomic, strong) UITextField *codeField;
+@end
+
+@implementation XSNPMODZLogin
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.view.backgroundColor = [UIColor colorWithRed:0 green:0 blue:0 alpha:0.85];
+    
+    UIView *panel = [[UIView alloc] initWithFrame:CGRectMake(50, 200, self.view.frame.size.width-100, 180)];
+    panel.backgroundColor = [UIColor colorWithRed:0.05 green:0.05 blue:0.12 alpha:0.98];
+    panel.layer.cornerRadius = 15;
+    panel.layer.borderWidth = 3;
+    panel.layer.borderColor = [UIColor redColor].CGColor;
+    [self.view addSubview:panel];
+    
+    UILabel *title = [[UILabel alloc] initWithFrame:CGRectMake(0, 20, panel.frame.size.width, 40)];
+    title.text = @"XSNPMODZ";
+    title.textColor = [UIColor redColor];
+    title.textAlignment = NSTextAlignmentCenter;
+    title.font = [UIFont boldSystemFontOfSize:26];
+    [panel addSubview:title];
+    
+    self.codeField = [[UITextField alloc] initWithFrame:CGRectMake(30, 80, panel.frame.size.width-60, 45)];
+    self.codeField.placeholder = @"Entre le code (1)";
+    self.codeField.borderStyle = UITextBorderStyleRoundedRect;
+    self.codeField.backgroundColor = [UIColor darkGrayColor];
+    self.codeField.textColor = [UIColor whiteColor];
+    self.codeField.keyboardType = UIKeyboardTypeNumberPad;
+    [panel addSubview:self.codeField];
+    
+    UIButton *validateBtn = [UIButton buttonWithType:UIButtonTypeSystem];
+    validateBtn.frame = CGRectMake(30, 140, panel.frame.size.width-60, 45);
+    [validateBtn setTitle:@"VALIDATE" forState:UIControlStateNormal];
+    validateBtn.backgroundColor = [UIColor redColor];
+    validateBtn.tintColor = [UIColor whiteColor];
+    [validateBtn addTarget:self action:@selector(validateCode) forControlEvents:UIControlEventTouchUpInside];
+    [panel addSubview:validateBtn];
+}
+
+- (void)validateCode {
+    if ([self.codeField.text isEqualToString:@"1"]) {
+        isLoggedIn = YES;
+        [self dismissViewControllerAnimated:YES completion:^{
+            [self showMainMenu];
+        }];
+    }
+}
+
+- (void)showMainMenu {
+    XSNPMODZMenu *menu = [[XSNPMODZMenu alloc] init];
+    menu.modalPresentationStyle = UIModalPresentationOverFullScreen;
+    UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
+    [root presentViewController:menu animated:YES completion:nil];
+}
+
+@end
+
+// === MENU PRINCIPAL AVEC 3 SECTIONS ===
+@interface XSNPMODZMenu : UIViewController
+@end
+
+@implementation XSNPMODZMenu
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.view.backgroundColor = [UIColor colorWithRed:0 green:0 blue:0 alpha:0.92];
+    
+    UILabel *title = [[UILabel alloc] initWithFrame:CGRectMake(0, 40, self.view.frame.size.width, 50)];
+    title.text = @"XSNPMODZ";
+    title.textColor = [UIColor redColor];
+    title.textAlignment = NSTextAlignmentCenter;
+    title.font = [UIFont boldSystemFontOfSize:32];
+    [self.view addSubview:title];
+    
+    // MAIN
+    [self createSection:@"MAIN" y:120];
+    [self createSwitch:@"Aimbot (Tête auto)" y:160 action:@selector(toggleAimbot) var:&aimbotEnabled];
+    
+    // ESP
+    [self createSection:@"ESP" y:210];
+    [self createSwitch:@"ESP BOX" y:250 action:@selector(toggleEspBox) var:&espBoxEnabled];
+    [self createSwitch:@"ESP LINE" y:290 action:@selector(toggleEspLine) var:&espLineEnabled];
+    [self createSwitch:@"ESP DISTANCE" y:330 action:@selector(toggleEspDistance) var:&espDistanceEnabled];
+    
+    // EXTRA
+    [self createSection:@"EXTRA" y:380];
+    [self createSwitch:@"PPX Achats Gratuits" y:420 action:@selector(togglePpx) var:&ppxEnabled];
+    
+    UIButton *closeBtn = [UIButton buttonWithType:UIButtonTypeSystem];
+    closeBtn.frame = CGRectMake(50, self.view.frame.size.height - 100, self.view.frame.size.width - 100, 55);
+    [closeBtn setTitle:@"CLOSE MENU" forState:UIControlStateNormal];
+    closeBtn.backgroundColor = [UIColor greenColor];
+    closeBtn.tintColor = [UIColor blackColor];
+    [closeBtn addTarget:self action:@selector(dismissViewControllerAnimated:completion:) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:closeBtn];
+}
+
+- (void)createSection:(NSString *)name y:(CGFloat)y {
+    UILabel *lbl = [[UILabel alloc] initWithFrame:CGRectMake(40, y, 200, 30)];
+    lbl.text = name;
+    lbl.textColor = [UIColor redColor];
+    lbl.font = [UIFont boldSystemFontOfSize:18];
+    [self.view addSubview:lbl];
+}
+
+- (void)createSwitch:(NSString *)label y:(CGFloat)y action:(SEL)action var:(BOOL *)var {
+    UILabel *lbl = [[UILabel alloc] initWithFrame:CGRectMake(50, y, 220, 35)];
+    lbl.text = label; lbl.textColor = [UIColor whiteColor];
+    [self.view addSubview:lbl];
+    
+    UISwitch *sw = [[UISwitch alloc] initWithFrame:CGRectMake(self.view.frame.size.width - 90, y, 60, 35)];
+    sw.on = *var;
+    [sw addTarget:self action:action forControlEvents:UIControlEventValueChanged];
+    [self.view addSubview:sw];
+}
+
+- (void)toggleEspBox { espBoxEnabled = ((UISwitch *)self.view.subviews.lastObject).on; } // Simplifié pour l'exemple
+- (void)toggleEspLine { espLineEnabled = ((UISwitch *)self.view.subviews.lastObject).on; }
+- (void)toggleEspDistance { espDistanceEnabled = ((UISwitch *)self.view.subviews.lastObject).on; }
+- (void)toggleAimbot { aimbotEnabled = ((UISwitch *)self.view.subviews.lastObject).on; }
+- (void)togglePpx { ppxEnabled = ((UISwitch *)self.view.subviews.lastObject).on; }
+
+@end
+
+FloatingButton *floatingBtn = nil;
+
 %ctor {
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 2 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-        UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
-        if (root) {
-            floatingBtn = [[StylishButton alloc] initWithFrame:CGRectMake(20, 120, 60, 60)];
-            [root.view addSubview:floatingBtn];
-            NSLog(@"[XSNPMODZ] 🔥 Menu stylé chargé !");
+        if (!floatingBtn) {
+            floatingBtn = [[FloatingButton alloc] initWithFrame:CGRectMake(30, 150, 44, 44)];
+            UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
+            if (root && root.view) [root.view addSubview:floatingBtn];
+            NSLog(@"[XSNPMODZ] 🔥 Menu caché 3 clics injecté - Code login = 1");
         }
     });
 }
 
-// ============ PPX HOOK ============
 %hook SKPaymentQueue
 - (void)addPayment:(SKPayment *)payment {
-    if (ppx) {
-        NSLog(@"[XSNPMODZ] 💰 PPX - Produit gratuit: %@", payment.productIdentifier);
-        return;
-    }
+    if (ppxEnabled) return;
     %orig;
 }
 %end
