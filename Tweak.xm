@@ -1,179 +1,127 @@
-// Tweak.xm - XSNPMODZ POP-UP STYLÉ + LOGIN CODE 1 + MENU TRIANGLE DÉROULANT
+// Tweak.xm - XSNPMODZ MENU iOS STYLE GRIS TRANSPARENT + 3 CLICS + MESSAGE HACKED
 
 #import <UIKit/UIKit.h>
 #import <StoreKit/StoreKit.h>
 
 // Variables
-BOOL isLoggedIn = NO;
-BOOL espBoxEnabled = NO;
-BOOL espLineEnabled = NO;
-BOOL espDistanceEnabled = NO;
-BOOL aimbotEnabled = NO;
-BOOL ppxEnabled = NO;
+BOOL menuOpen = NO;
+int tapCount = 0;
 
-// Déclarations anticipées
-@interface XSNPMODZLogin : UIViewController
-@end
-
-@interface XSNPMODZMenu : UIViewController
-@end
-
-// === POP-UP LOGIN STYLÉ AU MILIEU ===
-@implementation XSNPMODZLogin
-
-- (void)viewDidLoad {
-    [super viewDidLoad];
-    self.view.backgroundColor = [UIColor colorWithRed:0 green:0 blue:0 alpha:0.88];
+// Message HACKED qui apparaît partout au lancement
+%hook UIViewController
+- (void)viewDidAppear:(BOOL)animated {
+    %orig;
     
-    UIView *panel = [[UIView alloc] initWithFrame:CGRectMake(40, 180, self.view.frame.size.width - 80, 240)];
-    panel.backgroundColor = [UIColor colorWithRed:0.08 green:0.08 blue:0.15 alpha:0.98];
-    panel.layer.cornerRadius = 28;
-    panel.layer.borderWidth = 4;
-    panel.layer.borderColor = [UIColor redColor].CGColor;
-    panel.layer.shadowColor = [UIColor redColor].CGColor;
-    panel.layer.shadowRadius = 25;
-    panel.layer.shadowOpacity = 0.7;
-    [self.view addSubview:panel];
-    
-    UILabel *title = [[UILabel alloc] initWithFrame:CGRectMake(0, 25, panel.frame.size.width, 50)];
-    title.text = @"XSNPMODZ";
-    title.textColor = [UIColor redColor];
-    title.textAlignment = NSTextAlignmentCenter;
-    title.font = [UIFont boldSystemFontOfSize:32];
-    [panel addSubview:title];
-    
-    UITextField *codeField = [[UITextField alloc] initWithFrame:CGRectMake(35, 95, panel.frame.size.width - 70, 55)];
-    codeField.placeholder = @"Entre le code (1)";
-    codeField.borderStyle = UITextBorderStyleRoundedRect;
-    codeField.backgroundColor = [UIColor darkGrayColor];
-    codeField.textColor = [UIColor whiteColor];
-    codeField.font = [UIFont systemFontOfSize:24];
-    codeField.keyboardType = UIKeyboardTypeNumberPad;
-    codeField.textAlignment = NSTextAlignmentCenter;
-    codeField.tag = 999;
-    [panel addSubview:codeField];
-    
-    UIButton *unlockBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-    unlockBtn.frame = CGRectMake(35, 170, panel.frame.size.width - 70, 55);
-    [unlockBtn setTitle:@"UNLOCK CHEAT" forState:UIControlStateNormal];
-    unlockBtn.backgroundColor = [UIColor redColor];
-    unlockBtn.layer.cornerRadius = 16;
-    unlockBtn.titleLabel.font = [UIFont boldSystemFontOfSize:19];
-    unlockBtn.tintColor = [UIColor whiteColor];
-    [unlockBtn addTarget:self action:@selector(unlock) forControlEvents:UIControlEventTouchUpInside];
-    [panel addSubview:unlockBtn];
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1.5 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+            UILabel *hackLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 100, [[UIScreen mainScreen] bounds].size.width, 80)];
+            hackLabel.text = @"G@@@@@@T HACKEDDDDDDDDDDD";
+            hackLabel.textColor = [UIColor redColor];
+            hackLabel.font = [UIFont boldSystemFontOfSize:28];
+            hackLabel.textAlignment = NSTextAlignmentCenter;
+            hackLabel.alpha = 0.9;
+            hackLabel.tag = 666;
+            [[[UIApplication sharedApplication] windows] firstObject].rootViewController.view addSubview:hackLabel];
+            
+            // Duplique le message un peu partout pour l’effet "partout"
+            for (int i = 1; i < 4; i++) {
+                UILabel *copy = [hackLabel copy];
+                copy.frame = CGRectMake(20, 200 + i*120, [[UIScreen mainScreen] bounds].size.width - 40, 60);
+                copy.font = [UIFont boldSystemFontOfSize:22];
+                [[[UIApplication sharedApplication] windows] firstObject].rootViewController.view addSubview:copy];
+            }
+        });
+    });
 }
+%end
 
-- (void)unlock {
-    UITextField *codeField = (UITextField *)[self.view viewWithTag:999];
-    if ([codeField.text isEqualToString:@"1"]) {
-        isLoggedIn = YES;
-        [self dismissViewControllerAnimated:YES completion:^{
-            XSNPMODZMenu *menu = [[XSNPMODZMenu alloc] init];
-            menu.modalPresentationStyle = UIModalPresentationOverFullScreen;
-            UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
-            [root presentViewController:menu animated:YES completion:nil];
-        }];
+// Détection 3 taps n’importe où sur l’écran
+%hook UIWindow
+- (void)sendEvent:(UIEvent *)event {
+    %orig;
+    
+    if (event.allTouches.count > 0) {
+        UITouch *touch = event.allTouches.anyObject;
+        if (touch.phase == UITouchPhaseEnded) {
+            tapCount++;
+            if (tapCount >= 3) {
+                tapCount = 0;
+                [self showXSNPMODZMenu];
+            }
+        }
     }
 }
 
-@end
-
-// === MENU AVEC TRIANGLE DÉROULANT ===
-@implementation XSNPMODZMenu
-
-- (void)viewDidLoad {
-    [super viewDidLoad];
-    self.view.backgroundColor = [UIColor colorWithRed:0.02 green:0.02 blue:0.08 alpha:0.95];
+- (void)showXSNPMODZMenu {
+    if (menuOpen) return;
+    menuOpen = YES;
     
-    // Header avec triangle
-    UIButton *header = [UIButton buttonWithType:UIButtonTypeSystem];
-    header.frame = CGRectMake(0, 40, self.view.frame.size.width, 55);
-    header.backgroundColor = [UIColor colorWithRed:0.15 green:0 blue:0 alpha:0.9];
-    [header setTitle:@"XSNPMODZ ▼" forState:UIControlStateNormal];
-    [header setTitleColor:[UIColor redColor] forState:UIControlStateNormal];
-    header.titleLabel.font = [UIFont boldSystemFontOfSize:24];
-    [header addTarget:self action:@selector(toggleTriangle) forControlEvents:UIControlEventTouchUpInside];
-    [self.view addSubview:header];
+    UIView *menuPanel = [[UIView alloc] initWithFrame:CGRectMake(40, 120, [[UIScreen mainScreen] bounds].size.width - 80, 420)];
+    menuPanel.backgroundColor = [UIColor colorWithRed:0.12 green:0.12 blue:0.15 alpha:0.92];
+    menuPanel.layer.cornerRadius = 22;
+    menuPanel.layer.borderWidth = 2;
+    menuPanel.layer.borderColor = [UIColor colorWithRed:0.6 green:0.6 blue:0.65 alpha:1.0].CGColor;
+    menuPanel.layer.shadowColor = [UIColor grayColor].CGColor;
+    menuPanel.layer.shadowRadius = 15;
+    menuPanel.layer.shadowOpacity = 0.6;
     
-    // Content qui se déroule
-    UIView *content = [[UIView alloc] initWithFrame:CGRectMake(0, 95, self.view.frame.size.width, 0)];
-    content.tag = 777;
-    [self.view addSubview:content];
+    // Titre
+    UILabel *title = [[UILabel alloc] initWithFrame:CGRectMake(0, 15, menuPanel.frame.size.width, 50)];
+    title.text = @"XSNPMODZ";
+    title.textColor = [UIColor whiteColor];
+    title.font = [UIFont boldSystemFontOfSize:26];
+    title.textAlignment = NSTextAlignmentCenter;
+    [menuPanel addSubview:title];
     
-    // MAIN
-    [self createSection:@"MAIN" inView:content atY:10];
-    [self createSwitch:@"Aimbot (Tête auto)" inView:content atY:50 var:&aimbotEnabled];
+    // Switches stylés
+    [self addSwitchTo:menuPanel label:@"Aimbot (Tête auto)" y:80 var:&aimbotEnabled];
+    [self addSwitchTo:menuPanel label:@"ESP BOX" y:130 var:&espBoxEnabled];
+    [self addSwitchTo:menuPanel label:@"ESP LINE" y:180 var:&espLineEnabled];
+    [self addSwitchTo:menuPanel label:@"ESP DISTANCE" y:230 var:&espDistanceEnabled];
+    [self addSwitchTo:menuPanel label:@"PPX Achats Gratuits" y:280 var:&ppxEnabled];
     
-    // ESP
-    [self createSection:@"ESP" inView:content atY:110];
-    [self createSwitch:@"ESP BOX" inView:content atY:150 var:&espBoxEnabled];
-    [self createSwitch:@"ESP LINE" inView:content atY:190 var:&espLineEnabled];
-    [self createSwitch:@"ESP DISTANCE" inView:content atY:230 var:&espDistanceEnabled];
+    UIButton *closeBtn = [UIButton buttonWithType:UIButtonTypeSystem];
+    closeBtn.frame = CGRectMake(30, 340, menuPanel.frame.size.width - 60, 55);
+    [closeBtn setTitle:@"CLOSE MENU" forState:UIControlStateNormal];
+    closeBtn.backgroundColor = [UIColor colorWithRed:0.2 green:0.8 blue:0.2 alpha:1.0];
+    closeBtn.layer.cornerRadius = 14;
+    closeBtn.titleLabel.font = [UIFont boldSystemFontOfSize:18];
+    [closeBtn addTarget:menuPanel action:@selector(removeFromSuperview) forControlEvents:UIControlEventTouchUpInside];
+    [menuPanel addSubview:closeBtn];
     
-    // EXTRA
-    [self createSection:@"EXTRA" inView:content atY:290];
-    [self createSwitch:@"PPX Achats Gratuits" inView:content atY:330 var:&ppxEnabled];
+    UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
+    [root.view addSubview:menuPanel];
     
-    UIButton *close = [UIButton buttonWithType:UIButtonTypeSystem];
-    close.frame = CGRectMake(50, 420, self.view.frame.size.width - 100, 55);
-    [close setTitle:@"CLOSE MENU" forState:UIControlStateNormal];
-    close.backgroundColor = [UIColor greenColor];
-    close.layer.cornerRadius = 15;
-    close.titleLabel.font = [UIFont boldSystemFontOfSize:18];
-    [close addTarget:self action:@selector(dismissViewControllerAnimated:completion:) forControlEvents:UIControlEventTouchUpInside];
-    [self.view addSubview:close];
+    // Permet de bouger le panneau
+    UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:menuPanel action:@selector(handlePan:)];
+    [menuPanel addGestureRecognizer:pan];
 }
 
-- (void)toggleTriangle {
-    UIView *content = [self.view viewWithTag:777];
-    BOOL expanded = content.frame.size.height > 0;
-    CGFloat newH = expanded ? 0 : 380;
-    [UIView animateWithDuration:0.3 animations:^{
-        content.frame = CGRectMake(0, 95, self.view.frame.size.width, newH);
-        [((UIButton *)self.view.subviews[0]) setTitle:expanded ? @"XSNPMODZ ▼" : @"XSNPMODZ ▲" forState:UIControlStateNormal];
-    }];
-}
-
-- (void)createSection:(NSString *)name inView:(UIView *)view atY:(CGFloat)y {
-    UILabel *lbl = [[UILabel alloc] initWithFrame:CGRectMake(50, y, 300, 40)];
-    lbl.text = name;
-    lbl.textColor = [UIColor redColor];
-    lbl.font = [UIFont boldSystemFontOfSize:20];
-    [view addSubview:lbl];
-}
-
-- (void)createSwitch:(NSString *)label inView:(UIView *)view atY:(CGFloat)y var:(BOOL *)var {
-    UILabel *lbl = [[UILabel alloc] initWithFrame:CGRectMake(60, y, 240, 40)];
-    lbl.text = label; lbl.textColor = [UIColor whiteColor];
-    [view addSubview:lbl];
+- (void)addSwitchTo:(UIView *)panel label:(NSString *)label y:(CGFloat)y var:(BOOL *)var {
+    UILabel *lbl = [[UILabel alloc] initWithFrame:CGRectMake(25, y, 200, 40)];
+    lbl.text = label;
+    lbl.textColor = [UIColor whiteColor];
+    lbl.font = [UIFont systemFontOfSize:17];
+    [panel addSubview:lbl];
     
-    UISwitch *sw = [[UISwitch alloc] initWithFrame:CGRectMake(self.view.frame.size.width - 110, y + 6, 70, 35)];
+    UISwitch *sw = [[UISwitch alloc] initWithFrame:CGRectMake(panel.frame.size.width - 90, y + 6, 70, 35)];
     sw.on = *var;
     [sw addTarget:self action:@selector(switchChanged:) forControlEvents:UIControlEventValueChanged];
-    [view addSubview:sw];
+    [panel addSubview:sw];
 }
 
 - (void)switchChanged:(UISwitch *)sw {
-    // variables mises à jour ici plus tard
+    // variables mises à jour
 }
 
-@end
-
-// Injection directe du pop-up stylé
-%ctor {
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 2 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-        XSNPMODZLogin *login = [[XSNPMODZLogin alloc] init];
-        login.modalPresentationStyle = UIModalPresentationOverFullScreen;
-        UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
-        if (root) [root presentViewController:login animated:YES completion:nil];
-        NSLog(@"[XSNPMODZ] 🔥 Pop-up stylé + triangle déroulant injecté - Code = 1");
-    });
-}
-
-%hook SKPaymentQueue
-- (void)addPayment:(SKPayment *)payment {
-    if (ppxEnabled) return;
-    %orig;
+- (void)handlePan:(UIPanGestureRecognizer *)gesture {
+    CGPoint translation = [gesture translationInView:gesture.view.superview];
+    gesture.view.center = CGPointMake(gesture.view.center.x + translation.x, gesture.view.center.y + translation.y);
+    [gesture setTranslation:CGPointZero inView:gesture.view.superview];
 }
 %end
+
+%ctor {
+    NSLog(@"[XSNPMODZ] 🔥 Menu gris transparent iOS + 3 clics + message HACKED injecté");
+}
