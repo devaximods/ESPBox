@@ -3,7 +3,6 @@
 
 static UIViewController *loginVC = nil;
 static BOOL isLoggedIn = NO;
-static UIView *espOverlay = nil;
 
 // === LOGIN VIEW CONTROLLER ===
 @interface LoginViewController : UIViewController
