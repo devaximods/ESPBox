@@ -1,9 +1,9 @@
-// Tweak.xm - XSNPMODZ MENU FLOTTANT STABLE ANTI-CRASH - VERSION FINALE
+// Tweak.xm - XSNPMODZ MENU FLOTTANT STABLE - VERSION FINALE SANS ERREUR
 
 #import <UIKit/UIKit.h>
 #import <StoreKit/StoreKit.h>
 
-// === VARIABLES GLOBALES ===
+// Variables globales
 BOOL isLoggedIn = NO;
 BOOL espBoxEnabled = NO;
 BOOL espLineEnabled = NO;
@@ -11,11 +11,18 @@ BOOL espDistanceEnabled = NO;
 BOOL aimbotEnabled = NO;
 BOOL ppxEnabled = NO;
 
-// === DÉCLARATION AVANT (pour éviter l'erreur unknown type) ===
+// Déclaration complète de la classe menu AVANT utilisation
 @interface XSNPMODZMenu : UIViewController
+@property (nonatomic, strong) UITextField *usernameField;
+@property (nonatomic, strong) UITextField *passwordField;
+@property (nonatomic, strong) UISwitch *espBoxSwitch;
+@property (nonatomic, strong) UISwitch *espLineSwitch;
+@property (nonatomic, strong) UISwitch *espDistanceSwitch;
+@property (nonatomic, strong) UISwitch *aimbotSwitch;
+@property (nonatomic, strong) UISwitch *ppxSwitch;
 @end
 
-// === BOUTON FLOTTANT ===
+// Bouton flottant
 @interface FloatingButton : UIButton
 @property (nonatomic, strong) UITapGestureRecognizer *tapGesture;
 @end
@@ -27,7 +34,7 @@ BOOL ppxEnabled = NO;
         self.backgroundColor = [UIColor colorWithRed:1.0 green:0.0 blue:0.0 alpha:0.95];
         self.layer.cornerRadius = 35;
         self.clipsToBounds = YES;
-        [self setTitle:@"🔥" forState:UIControlStateNormal];   // ← CHANGE ÇA EN "X" "💀" "🍆" etc.
+        [self setTitle:@"🔥" forState:UIControlStateNormal];  // ← Change en "X" "💀" "🍆" etc.
         self.titleLabel.font = [UIFont systemFontOfSize:38 weight:UIFontWeightBold];
         
         self.tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(openMenu)];
@@ -55,7 +62,7 @@ BOOL ppxEnabled = NO;
 }
 @end
 
-// === MENU XSNPMODZ ===
+// Implémentation du menu
 @implementation XSNPMODZMenu
 
 - (void)viewDidLoad {
@@ -157,7 +164,7 @@ BOOL ppxEnabled = NO;
 
 @end
 
-// === INJECTION DU BOUTON ===
+// Injection du bouton flottant
 FloatingButton *floatingBtn = nil;
 
 %ctor {
@@ -167,13 +174,13 @@ FloatingButton *floatingBtn = nil;
             UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
             if (root && root.view) {
                 [root.view addSubview:floatingBtn];
-                NSLog(@"[XSNPMODZ] 🔥 Bouton XSNPMODZ injecté - Plus de crash au clic !");
+                NSLog(@"[XSNPMODZ] 🔥 Bouton flottant injecté - Clique sans crash !");
             }
         }
     });
 }
 
-// === PPX ===
+// PPX
 %hook SKPaymentQueue
 - (void)addPayment:(SKPayment *)payment {
     if (ppxEnabled) {
