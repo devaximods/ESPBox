@@ -1,123 +1,135 @@
 #import <UIKit/UIKit.h>
 #import <StoreKit/StoreKit.h>
 
-// === CONFIG MENU ===
-static BOOL enabled = YES;
-static BOOL stealthMode = NO;
-static BOOL espBox = NO;
-static BOOL espLine = NO;
-static BOOL espDistance = NO;
-static BOOL ppxHack = NO;
+static UIViewController *loginVC = nil;
+static BOOL isLoggedIn = NO;
+static UIView *espOverlay = nil;
 
-static UIViewController *menuVC = nil;
-static UIView *overlayView = nil;
-
-// === MENU VIEW CONTROLLER ===
-@interface NexusMenuViewController : UIViewController
-@property (nonatomic, strong) UISwitch *stealthSwitch;
-@property (nonatomic, strong) UISwitch *espBoxSwitch;
-@property (nonatomic, strong) UISwitch *espLineSwitch;
-@property (nonatomic, strong) UISwitch *espDistanceSwitch;
-@property (nonatomic, strong) UISwitch *ppxSwitch;
-@property (nonatomic, strong) UIButton *applyButton;
+// === LOGIN VIEW CONTROLLER ===
+@interface LoginViewController : UIViewController
+@property (nonatomic, strong) UITextField *usernameField;
+@property (nonatomic, strong) UITextField *passwordField;
+@property (nonatomic, strong) UIButton *loginButton;
+@property (nonatomic, strong) UILabel *titleLabel;
 @end
 
-@implementation NexusMenuViewController
+@implementation LoginViewController
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.view.backgroundColor = [UIColor colorWithRed:0.1 green:0.1 blue:0.2 alpha:0.95];
+    
+    // Fond noir/vert néon
+    self.view.backgroundColor = [UIColor colorWithRed:0.05 green:0.05 blue:0.1 alpha:1.0];
     
     // Titre
-    UILabel *title = [[UILabel alloc] initWithFrame:CGRectMake(20, 50, 300, 50)];
-    title.text = @"🔥 NEXUS MOD 🔥";
-    title.textColor = [UIColor redColor];
-    title.font = [UIFont boldSystemFontOfSize:28];
-    [self.view addSubview:title];
+    self.titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(20, 80, self.view.frame.size.width - 40, 60)];
+    self.titleLabel.text = @"🔥 NEXUS MOD 🔥";
+    self.titleLabel.textColor = [UIColor colorWithRed:0.0 green:1.0 blue:0.5 alpha:1.0];
+    self.titleLabel.font = [UIFont boldSystemFontOfSize:32];
+    self.titleLabel.textAlignment = NSTextAlignmentCenter;
+    [self.view addSubview:self.titleLabel];
     
-    // Stealth
-    self.stealthSwitch = [[UISwitch alloc] initWithFrame:CGRectMake(20, 120, 0, 0)];
-    [self.stealthSwitch addTarget:self action:@selector(toggleStealth:) forControlEvents:UIControlEventValueChanged];
-    UILabel *stealthLabel = [[UILabel alloc] initWithFrame:CGRectMake(80, 120, 200, 30)];
-    stealthLabel.text = @"Stealth Mode (cache le menu)";
-    stealthLabel.textColor = [UIColor whiteColor];
-    [self.view addSubview:stealthLabel];
-    [self.view addSubview:self.stealthSwitch];
+    // Sous-titre
+    UILabel *subLabel = [[UILabel alloc] initWithFrame:CGRectMake(20, 140, self.view.frame.size.width - 40, 30)];
+    subLabel.text = @"Connexion requise pour activer les cheats";
+    subLabel.textColor = [UIColor lightGrayColor];
+    subLabel.font = [UIFont systemFontOfSize:14];
+    subLabel.textAlignment = NSTextAlignmentCenter;
+    [self.view addSubview:subLabel];
     
-    // ESP Box
-    self.espBoxSwitch = [[UISwitch alloc] initWithFrame:CGRectMake(20, 170, 0, 0)];
-    [self.espBoxSwitch addTarget:self action:@selector(toggleEspBox:) forControlEvents:UIControlEventValueChanged];
-    UILabel *boxLabel = [[UILabel alloc] initWithFrame:CGRectMake(80, 170, 200, 30)];
-    boxLabel.text = @"ESP Box (boîte rouge)";
-    boxLabel.textColor = [UIColor whiteColor];
-    [self.view addSubview:boxLabel];
-    [self.view addSubview:self.espBoxSwitch];
+    // Champ username
+    self.usernameField = [[UITextField alloc] initWithFrame:CGRectMake(40, 200, self.view.frame.size.width - 80, 50)];
+    self.usernameField.placeholder = @"Nom d'utilisateur";
+    self.usernameField.borderStyle = UITextBorderStyleRoundedRect;
+    self.usernameField.backgroundColor = [UIColor whiteColor];
+    self.usernameField.textColor = [UIColor blackColor];
+    self.usernameField.autocapitalizationType = UITextAutocapitalizationTypeNone;
+    [self.view addSubview:self.usernameField];
     
-    // ESP Line
-    self.espLineSwitch = [[UISwitch alloc] initWithFrame:CGRectMake(20, 220, 0, 0)];
-    [self.espLineSwitch addTarget:self action:@selector(toggleEspLine:) forControlEvents:UIControlEventValueChanged];
-    UILabel *lineLabel = [[UILabel alloc] initWithFrame:CGRectMake(80, 220, 200, 30)];
-    lineLabel.text = @"ESP Line (ligne vers cible)";
-    lineLabel.textColor = [UIColor whiteColor];
-    [self.view addSubview:lineLabel];
-    [self.view addSubview:self.espLineSwitch];
+    // Champ password
+    self.passwordField = [[UITextField alloc] initWithFrame:CGRectMake(40, 270, self.view.frame.size.width - 80, 50)];
+    self.passwordField.placeholder = @"Mot de passe";
+    self.passwordField.borderStyle = UITextBorderStyleRoundedRect;
+    self.passwordField.backgroundColor = [UIColor whiteColor];
+    self.passwordField.textColor = [UIColor blackColor];
+    self.passwordField.secureTextEntry = YES;
+    [self.view addSubview:self.passwordField];
     
-    // ESP Distance
-    self.espDistanceSwitch = [[UISwitch alloc] initWithFrame:CGRectMake(20, 270, 0, 0)];
-    [self.espDistanceSwitch addTarget:self action:@selector(toggleEspDistance:) forControlEvents:UIControlEventValueChanged];
-    UILabel *distLabel = [[UILabel alloc] initWithFrame:CGRectMake(80, 270, 200, 30)];
-    distLabel.text = @"ESP Distance (mètres)";
-    distLabel.textColor = [UIColor whiteColor];
-    [self.view addSubview:distLabel];
-    [self.view addSubview:self.espDistanceSwitch];
+    // Bouton login
+    self.loginButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.loginButton.frame = CGRectMake(40, 350, self.view.frame.size.width - 80, 50);
+    [self.loginButton setTitle:@"SE CONNECTER" forState:UIControlStateNormal];
+    [self.loginButton setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
+    self.loginButton.backgroundColor = [UIColor colorWithRed:0.0 green:1.0 blue:0.5 alpha:1.0];
+    self.loginButton.titleLabel.font = [UIFont boldSystemFontOfSize:18];
+    self.loginButton.layer.cornerRadius = 10;
+    [self.loginButton addTarget:self action:@selector(loginTapped) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:self.loginButton];
     
-    // PPX Hack
-    self.ppxSwitch = [[UISwitch alloc] initWithFrame:CGRectMake(20, 320, 0, 0)];
-    [self.ppxSwitch addTarget:self action:@selector(togglePpx:) forControlEvents:UIControlEventValueChanged];
-    UILabel *ppxLabel = [[UILabel alloc] initWithFrame:CGRectMake(80, 320, 200, 30)];
-    ppxLabel.text = @"PPX Hack (mode hardcore)";
-    ppxLabel.textColor = [UIColor whiteColor];
-    [self.view addSubview:ppxLabel];
-    [self.view addSubview:self.ppxSwitch];
-    
-    // Apply Button
-    self.applyButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    self.applyButton.frame = CGRectMake(50, 400, 250, 60);
-    [self.applyButton setTitle:@"APPLY" forState:UIControlStateNormal];
-    self.applyButton.backgroundColor = [UIColor redColor];
-    self.applyButton.titleLabel.font = [UIFont boldSystemFontOfSize:20];
-    [self.applyButton addTarget:self action:@selector(applySettings) forControlEvents:UIControlEventTouchUpInside];
-    [self.view addSubview:self.applyButton];
+    // Message d'erreur (caché au début)
+    UILabel *errorLabel = [[UILabel alloc] initWithFrame:CGRectMake(40, 420, self.view.frame.size.width - 80, 30)];
+    errorLabel.text = @"⚠️ Login ou mot de passe incorrect";
+    errorLabel.textColor = [UIColor redColor];
+    errorLabel.font = [UIFont systemFontOfSize:12];
+    errorLabel.textAlignment = NSTextAlignmentCenter;
+    errorLabel.tag = 999;
+    errorLabel.hidden = YES;
+    [self.view addSubview:errorLabel];
 }
 
-- (void)toggleStealth:(UISwitch *)sender { stealthMode = sender.isOn; }
-- (void)toggleEspBox:(UISwitch *)sender { espBox = sender.isOn; }
-- (void)toggleEspLine:(UISwitch *)sender { espLine = sender.isOn; }
-- (void)toggleEspDistance:(UISwitch *)sender { espDistance = sender.isOn; }
-- (void)togglePpx:(UISwitch *)sender { ppxHack = sender.isOn; }
-
-- (void)applySettings {
-    NSLog(@"🔥 NEXUS MOD - ESP Box: %d, Line: %d, Distance: %d, PPX: %d", espBox, espLine, espDistance, ppxHack);
+- (void)loginTapped {
+    NSString *username = self.usernameField.text;
+    NSString *password = self.passwordField.text;
     
-    if (espBox) {
-        [self showTestBox];
+    UILabel *errorLabel = (UILabel *)[self.view viewWithTag:999];
+    
+    // Vérification (tu peux changer les identifiants ici)
+    if ([username isEqualToString:@"nexus"] && [password isEqualToString:@"admin"]) {
+        // Login réussi
+        isLoggedIn = YES;
+        [self dismissViewControllerAnimated:YES completion:^{
+            NSLog(@"✅ Connexion réussie - Cheats activés");
+            [self showActivationMessage];
+        }];
+    } else {
+        // Login échoué
+        errorLabel.hidden = NO;
+        
+        // Faire trembler le champ
+        [UIView animateWithDuration:0.1 animations:^{
+            self.usernameField.transform = CGAffineTransformMakeTranslation(5, 0);
+        } completion:^(BOOL finished) {
+            [UIView animateWithDuration:0.1 animations:^{
+                self.usernameField.transform = CGAffineTransformIdentity;
+            }];
+        }];
     }
 }
 
-- (void)showTestBox {
+- (void)showActivationMessage {
     UIWindow *keyWindow = [self getKeyWindow];
     if (!keyWindow) return;
     
-    overlayView = [[UIView alloc] initWithFrame:CGRectMake(50, 150, 100, 100)];
-    overlayView.backgroundColor = [UIColor redColor];
-    overlayView.layer.borderWidth = 2;
-    overlayView.layer.borderColor = [UIColor whiteColor].CGColor;
-    overlayView.tag = 9999;
-    [keyWindow addSubview:overlayView];
+    UIView *toast = [[UIView alloc] initWithFrame:CGRectMake(50, 200, [UIScreen mainScreen].bounds.size.width - 100, 50)];
+    toast.backgroundColor = [UIColor colorWithWhite:0 alpha:0.85];
+    toast.layer.cornerRadius = 25;
+    toast.layer.borderWidth = 1;
+    toast.layer.borderColor = [UIColor greenColor].CGColor;
     
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 2 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-        [overlayView removeFromSuperview];
-    });
+    UILabel *label = [[UILabel alloc] initWithFrame:toast.bounds];
+    label.text = @"✅ NEXUS MOD ACTIVÉ - BONNE PARTIE !";
+    label.textColor = [UIColor greenColor];
+    label.font = [UIFont boldSystemFontOfSize:12];
+    label.textAlignment = NSTextAlignmentCenter;
+    [toast addSubview:label];
+    
+    [keyWindow addSubview:toast];
+    
+    [UIView animateWithDuration:0.3 delay:2.0 options:UIViewAnimationOptionCurveEaseOut animations:^{
+        toast.alpha = 0;
+    } completion:^(BOOL finished) {
+        [toast removeFromSuperview];
+    }];
 }
 
 - (UIWindow *)getKeyWindow {
@@ -135,8 +147,24 @@ static UIView *overlayView = nil;
 
 @end
 
-// === GESTE 3 DOIGTS ===
-static UIWindow* GetKeyWindow() {
+// === AFFICHER LE LOGIN AU DÉMARRAGE ===
+%hook AppDelegate
+
+- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+    BOOL result = %orig;
+    
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.5 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+        if (!isLoggedIn && !loginVC) {
+            loginVC = [[LoginViewController alloc] init];
+            UIWindow *keyWindow = [self getKeyWindow];
+            [keyWindow.rootViewController presentViewController:loginVC animated:YES completion:nil];
+        }
+    });
+    
+    return result;
+}
+
+- (UIWindow *)getKeyWindow {
     if (@available(iOS 13, *)) {
         for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
             if (scene.activationState == UISceneActivationStateForegroundActive) {
@@ -149,20 +177,9 @@ static UIWindow* GetKeyWindow() {
     return nil;
 }
 
-%hook UIWindow
-
-- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
-    %orig;
-    if (touches.count >= 3 && enabled && !stealthMode && !menuVC) {
-        menuVC = [[NexusMenuViewController alloc] init];
-        UIWindow *keyWindow = GetKeyWindow();
-        [keyWindow.rootViewController presentViewController:menuVC animated:YES completion:nil];
-    }
-}
-
 %end
 
-// === HOOK POUR LES ACHATS (gardé de Satella) ===
+// === HOOK POUR LES ACHATS ===
 %hook SKPaymentQueue
 
 - (void)finishTransaction:(SKPaymentTransaction *)transaction {
@@ -177,14 +194,5 @@ static UIWindow* GetKeyWindow() {
 
 // === INIT ===
 %ctor {
-    NSLog(@"🔥 NEXUS MOD CHARGÉ");
+    NSLog(@"🔥 NEXUS MOD - En attente de login");
 }
-
-%hook AppDelegate
-
-- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    NSLog(@"🔥 NEXUS MOD - App lancée");
-    return %orig;
-}
-
-%end
