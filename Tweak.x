@@ -10,6 +10,7 @@ static BOOL espDistance = NO;
 static BOOL ppxHack = NO;
 
 static UIViewController *menuVC = nil;
+static UIView *overlayView = nil;
 
 // === MENU VIEW CONTROLLER ===
 @interface NexusMenuViewController : UIViewController
@@ -27,6 +28,7 @@ static UIViewController *menuVC = nil;
     [super viewDidLoad];
     self.view.backgroundColor = [UIColor colorWithRed:0.1 green:0.1 blue:0.2 alpha:0.95];
     
+    // Titre
     UILabel *title = [[UILabel alloc] initWithFrame:CGRectMake(20, 50, 300, 50)];
     title.text = @"🔥 NEXUS MOD 🔥";
     title.textColor = [UIColor redColor];
@@ -37,7 +39,7 @@ static UIViewController *menuVC = nil;
     self.stealthSwitch = [[UISwitch alloc] initWithFrame:CGRectMake(20, 120, 0, 0)];
     [self.stealthSwitch addTarget:self action:@selector(toggleStealth:) forControlEvents:UIControlEventValueChanged];
     UILabel *stealthLabel = [[UILabel alloc] initWithFrame:CGRectMake(80, 120, 200, 30)];
-    stealthLabel.text = @"Stealth Mode";
+    stealthLabel.text = @"Stealth Mode (cache le menu)";
     stealthLabel.textColor = [UIColor whiteColor];
     [self.view addSubview:stealthLabel];
     [self.view addSubview:self.stealthSwitch];
@@ -46,7 +48,7 @@ static UIViewController *menuVC = nil;
     self.espBoxSwitch = [[UISwitch alloc] initWithFrame:CGRectMake(20, 170, 0, 0)];
     [self.espBoxSwitch addTarget:self action:@selector(toggleEspBox:) forControlEvents:UIControlEventValueChanged];
     UILabel *boxLabel = [[UILabel alloc] initWithFrame:CGRectMake(80, 170, 200, 30)];
-    boxLabel.text = @"ESP Box";
+    boxLabel.text = @"ESP Box (boîte rouge)";
     boxLabel.textColor = [UIColor whiteColor];
     [self.view addSubview:boxLabel];
     [self.view addSubview:self.espBoxSwitch];
@@ -55,7 +57,7 @@ static UIViewController *menuVC = nil;
     self.espLineSwitch = [[UISwitch alloc] initWithFrame:CGRectMake(20, 220, 0, 0)];
     [self.espLineSwitch addTarget:self action:@selector(toggleEspLine:) forControlEvents:UIControlEventValueChanged];
     UILabel *lineLabel = [[UILabel alloc] initWithFrame:CGRectMake(80, 220, 200, 30)];
-    lineLabel.text = @"ESP Line";
+    lineLabel.text = @"ESP Line (ligne vers cible)";
     lineLabel.textColor = [UIColor whiteColor];
     [self.view addSubview:lineLabel];
     [self.view addSubview:self.espLineSwitch];
@@ -64,7 +66,7 @@ static UIViewController *menuVC = nil;
     self.espDistanceSwitch = [[UISwitch alloc] initWithFrame:CGRectMake(20, 270, 0, 0)];
     [self.espDistanceSwitch addTarget:self action:@selector(toggleEspDistance:) forControlEvents:UIControlEventValueChanged];
     UILabel *distLabel = [[UILabel alloc] initWithFrame:CGRectMake(80, 270, 200, 30)];
-    distLabel.text = @"ESP Distance";
+    distLabel.text = @"ESP Distance (mètres)";
     distLabel.textColor = [UIColor whiteColor];
     [self.view addSubview:distLabel];
     [self.view addSubview:self.espDistanceSwitch];
@@ -73,7 +75,7 @@ static UIViewController *menuVC = nil;
     self.ppxSwitch = [[UISwitch alloc] initWithFrame:CGRectMake(20, 320, 0, 0)];
     [self.ppxSwitch addTarget:self action:@selector(togglePpx:) forControlEvents:UIControlEventValueChanged];
     UILabel *ppxLabel = [[UILabel alloc] initWithFrame:CGRectMake(80, 320, 200, 30)];
-    ppxLabel.text = @"PPX Hack";
+    ppxLabel.text = @"PPX Hack (mode hardcore)";
     ppxLabel.textColor = [UIColor whiteColor];
     [self.view addSubview:ppxLabel];
     [self.view addSubview:self.ppxSwitch];
@@ -95,20 +97,35 @@ static UIViewController *menuVC = nil;
 - (void)togglePpx:(UISwitch *)sender { ppxHack = sender.isOn; }
 
 - (void)applySettings {
-    NSLog(@"NEXUS MOD APPLIED - ESP Box: %d, Line: %d, Distance: %d, PPX: %d", espBox, espLine, espDistance, ppxHack);
+    NSLog(@"🔥 NEXUS MOD - ESP Box: %d, Line: %d, Distance: %d, PPX: %d", espBox, espLine, espDistance, ppxHack);
+    
+    if (espBox) {
+        [self showTestBox];
+    }
 }
 
-@end
+- (void)showTestBox {
+    UIWindow *keyWindow = [self getKeyWindow];
+    if (!keyWindow) return;
+    
+    overlayView = [[UIView alloc] initWithFrame:CGRectMake(50, 150, 100, 100)];
+    overlayView.backgroundColor = [UIColor redColor];
+    overlayView.layer.borderWidth = 2;
+    overlayView.layer.borderColor = [UIColor whiteColor].CGColor;
+    overlayView.tag = 9999;
+    [keyWindow addSubview:overlayView];
+    
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 2 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+        [overlayView removeFromSuperview];
+    });
+}
 
-// === FONCTION POUR OBTENIR LA KEY WINDOW ===
-static UIWindow* GetKeyWindow() {
+- (UIWindow *)getKeyWindow {
     if (@available(iOS 13, *)) {
         for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
             if (scene.activationState == UISceneActivationStateForegroundActive) {
                 for (UIWindow *window in scene.windows) {
-                    if (window.isKeyWindow) {
-                        return window;
-                    }
+                    if (window.isKeyWindow) return window;
                 }
             }
         }
@@ -116,7 +133,22 @@ static UIWindow* GetKeyWindow() {
     return nil;
 }
 
-// === GESTE 3 DOIGTS POUR OUVRIR LE MENU ===
+@end
+
+// === GESTE 3 DOIGTS ===
+static UIWindow* GetKeyWindow() {
+    if (@available(iOS 13, *)) {
+        for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
+            if (scene.activationState == UISceneActivationStateForegroundActive) {
+                for (UIWindow *window in scene.windows) {
+                    if (window.isKeyWindow) return window;
+                }
+            }
+        }
+    }
+    return nil;
+}
+
 %hook UIWindow
 
 - (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
@@ -130,7 +162,7 @@ static UIWindow* GetKeyWindow() {
 
 %end
 
-// === HOOK POUR LES ACHATS ===
+// === HOOK POUR LES ACHATS (gardé de Satella) ===
 %hook SKPaymentQueue
 
 - (void)finishTransaction:(SKPaymentTransaction *)transaction {
@@ -143,15 +175,15 @@ static UIWindow* GetKeyWindow() {
 
 %end
 
-// === INIT TWEAK ===
+// === INIT ===
 %ctor {
-    NSLog(@"NEXUS MOD LOADED");
+    NSLog(@"🔥 NEXUS MOD CHARGÉ");
 }
 
 %hook AppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    NSLog(@"NEXUS MOD - App launched");
+    NSLog(@"🔥 NEXUS MOD - App lancée");
     return %orig;
 }
 
