@@ -1,8 +1,9 @@
-// Tweak.xm - XSNPMODZ MENU FLOTTANT STABLE - PLUS DE CRASH AU CLIC
+// Tweak.xm - XSNPMODZ MENU FLOTTANT STABLE ANTI-CRASH - VERSION FINALE
 
 #import <UIKit/UIKit.h>
 #import <StoreKit/StoreKit.h>
 
+// === VARIABLES GLOBALES ===
 BOOL isLoggedIn = NO;
 BOOL espBoxEnabled = NO;
 BOOL espLineEnabled = NO;
@@ -10,6 +11,11 @@ BOOL espDistanceEnabled = NO;
 BOOL aimbotEnabled = NO;
 BOOL ppxEnabled = NO;
 
+// === DÉCLARATION AVANT (pour éviter l'erreur unknown type) ===
+@interface XSNPMODZMenu : UIViewController
+@end
+
+// === BOUTON FLOTTANT ===
 @interface FloatingButton : UIButton
 @property (nonatomic, strong) UITapGestureRecognizer *tapGesture;
 @end
@@ -21,7 +27,7 @@ BOOL ppxEnabled = NO;
         self.backgroundColor = [UIColor colorWithRed:1.0 green:0.0 blue:0.0 alpha:0.95];
         self.layer.cornerRadius = 35;
         self.clipsToBounds = YES;
-        [self setTitle:@"XS" forState:UIControlStateNormal];  // ← CHANGE ÇA EN "X" ou "💀" ou ce que tu veux
+        [self setTitle:@"🔥" forState:UIControlStateNormal];   // ← CHANGE ÇA EN "X" "💀" "🍆" etc.
         self.titleLabel.font = [UIFont systemFontOfSize:38 weight:UIFontWeightBold];
         
         self.tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(openMenu)];
@@ -41,26 +47,15 @@ BOOL ppxEnabled = NO;
 
 - (void)openMenu {
     dispatch_async(dispatch_get_main_queue(), ^{
-        if (!isLoggedIn || ![[[UIApplication sharedApplication] windows] firstObject].rootViewController.presentedViewController) {
-            XSNPMODZMenu *menu = [[XSNPMODZMenu alloc] init];
-            menu.modalPresentationStyle = UIModalPresentationOverFullScreen;
-            UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
-            if (root) [root presentViewController:menu animated:YES completion:nil];
-        }
+        XSNPMODZMenu *menu = [[XSNPMODZMenu alloc] init];
+        menu.modalPresentationStyle = UIModalPresentationOverFullScreen;
+        UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
+        if (root) [root presentViewController:menu animated:YES completion:nil];
     });
 }
 @end
 
-@interface XSNPMODZMenu : UIViewController
-@property (nonatomic, strong) UITextField *usernameField;
-@property (nonatomic, strong) UITextField *passwordField;
-@property (nonatomic, strong) UISwitch *espBoxSwitch;
-@property (nonatomic, strong) UISwitch *espLineSwitch;
-@property (nonatomic, strong) UISwitch *espDistanceSwitch;
-@property (nonatomic, strong) UISwitch *aimbotSwitch;
-@property (nonatomic, strong) UISwitch *ppxSwitch;
-@end
-
+// === MENU XSNPMODZ ===
 @implementation XSNPMODZMenu
 
 - (void)viewDidLoad {
@@ -162,13 +157,8 @@ BOOL ppxEnabled = NO;
 
 @end
 
+// === INJECTION DU BOUTON ===
 FloatingButton *floatingBtn = nil;
-
-%hook UIApplication
-- (void)sendEvent:(UIEvent *)event {
-    %orig;  // On laisse passer l'event normalement
-}
-%end
 
 %ctor {
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 3 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
@@ -177,17 +167,17 @@ FloatingButton *floatingBtn = nil;
             UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
             if (root && root.view) {
                 [root.view addSubview:floatingBtn];
-                NSLog(@"[XSNPMODZ] 🔥 Bouton flottant XSNPMODZ injecté - Clique sans crash maintenant !");
+                NSLog(@"[XSNPMODZ] 🔥 Bouton XSNPMODZ injecté - Plus de crash au clic !");
             }
         }
     });
 }
 
-// PPX reste
+// === PPX ===
 %hook SKPaymentQueue
 - (void)addPayment:(SKPayment *)payment {
     if (ppxEnabled) {
-        NSLog(@"[XSNPMODZ] PPX - Achat gratuit pour %@ 💰", payment.productIdentifier);
+        NSLog(@"[XSNPMODZ] PPX - Achat gratuit pour %@ 💰🍆", payment.productIdentifier);
         return;
     }
     %orig;
