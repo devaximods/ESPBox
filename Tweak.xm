@@ -1,4 +1,4 @@
-// Tweak.xm - MENU LOGIN + SWITCHES - VERSION FINALE 2026 (XSNPOWWWWWW Edition)
+// Tweak.xm - MENU LOGIN + SWITCHES - VERSION ULTRA STABLE iOS 13+ (XSNPOWWWWWW)
 
 #import <UIKit/UIKit.h>
 #import <StoreKit/StoreKit.h>
@@ -32,6 +32,7 @@ BOOL ppxEnabled = NO;
     [self.view addSubview:title];
     
     if (!isLoggedIn) {
+        // Login
         self.usernameField = [[UITextField alloc] initWithFrame:CGRectMake(50, 150, self.view.frame.size.width - 100, 40)];
         self.usernameField.placeholder = @"Username (nexus ou admin)";
         self.usernameField.borderStyle = UITextBorderStyleRoundedRect;
@@ -47,33 +48,33 @@ BOOL ppxEnabled = NO;
         self.passwordField.textColor = [UIColor whiteColor];
         [self.view addSubview:self.passwordField];
         
-        UIButton *loginButton = [UIButton buttonWithType:UIButtonTypeSystem];
-        loginButton.frame = CGRectMake(50, 260, self.view.frame.size.width - 100, 50);
-        [loginButton setTitle:@"LOGIN TO FUCK" forState:UIControlStateNormal];
-        loginButton.backgroundColor = [UIColor redColor];
-        loginButton.tintColor = [UIColor whiteColor];
-        [loginButton addTarget:self action:@selector(loginAction) forControlEvents:UIControlEventTouchUpInside];
-        [self.view addSubview:loginButton];
+        UIButton *loginBtn = [UIButton buttonWithType:UIButtonTypeSystem];
+        loginBtn.frame = CGRectMake(50, 260, self.view.frame.size.width - 100, 50);
+        [loginBtn setTitle:@"LOGIN TO FUCK" forState:UIControlStateNormal];
+        loginBtn.backgroundColor = [UIColor redColor];
+        loginBtn.tintColor = [UIColor whiteColor];
+        [loginBtn addTarget:self action:@selector(loginAction) forControlEvents:UIControlEventTouchUpInside];
+        [self.view addSubview:loginBtn];
     } else {
-        [self createSwitchWithLabel:@"ESP Box" y:120 action:@selector(toggleEspBox) switchVar:&espBoxEnabled];
-        [self createSwitchWithLabel:@"ESP Line" y:170 action:@selector(toggleEspLine) switchVar:&espLineEnabled];
-        [self createSwitchWithLabel:@"ESP Distance" y:220 action:@selector(toggleEspDistance) switchVar:&espDistanceEnabled];
-        [self createSwitchWithLabel:@"PPX Achats Gratuits" y:270 action:@selector(togglePpx) switchVar:&ppxEnabled];
+        // Switches
+        [self createSwitch:@"ESP Box" y:120 action:@selector(toggleEspBox) var:&espBoxEnabled];
+        [self createSwitch:@"ESP Line" y:170 action:@selector(toggleEspLine) var:&espLineEnabled];
+        [self createSwitch:@"ESP Distance" y:220 action:@selector(toggleEspDistance) var:&espDistanceEnabled];
+        [self createSwitch:@"PPX Achats Gratuits" y:270 action:@selector(togglePpx) var:&ppxEnabled];
         
-        UIButton *applyButton = [UIButton buttonWithType:UIButtonTypeSystem];
-        applyButton.frame = CGRectMake(50, 350, self.view.frame.size.width - 100, 50);
-        [applyButton setTitle:@"APPLY & CLOSE MENU" forState:UIControlStateNormal];
-        applyButton.backgroundColor = [UIColor greenColor];
-        applyButton.tintColor = [UIColor blackColor];
-        [applyButton addTarget:self action:@selector(applyAndClose) forControlEvents:UIControlEventTouchUpInside];
-        [self.view addSubview:applyButton];
+        UIButton *applyBtn = [UIButton buttonWithType:UIButtonTypeSystem];
+        applyBtn.frame = CGRectMake(50, 350, self.view.frame.size.width - 100, 50);
+        [applyBtn setTitle:@"APPLY & CLOSE MENU" forState:UIControlStateNormal];
+        applyBtn.backgroundColor = [UIColor greenColor];
+        applyBtn.tintColor = [UIColor blackColor];
+        [applyBtn addTarget:self action:@selector(applyAndClose) forControlEvents:UIControlEventTouchUpInside];
+        [self.view addSubview:applyBtn];
     }
 }
 
-- (void)createSwitchWithLabel:(NSString *)label y:(CGFloat)y action:(SEL)action switchVar:(BOOL *)var {
+- (void)createSwitch:(NSString *)label y:(CGFloat)y action:(SEL)action var:(BOOL *)var {
     UILabel *lbl = [[UILabel alloc] initWithFrame:CGRectMake(50, y, 200, 30)];
-    lbl.text = label;
-    lbl.textColor = [UIColor whiteColor];
+    lbl.text = label; lbl.textColor = [UIColor whiteColor];
     [self.view addSubview:lbl];
     
     UISwitch *sw = [[UISwitch alloc] initWithFrame:CGRectMake(self.view.frame.size.width - 80, y, 50, 30)];
@@ -81,9 +82,9 @@ BOOL ppxEnabled = NO;
     [sw addTarget:self action:action forControlEvents:UIControlEventValueChanged];
     [self.view addSubview:sw];
     
-    if ([label containsString:@"ESP Box"]) self.espBoxSwitch = sw;
-    else if ([label containsString:@"ESP Line"]) self.espLineSwitch = sw;
-    else if ([label containsString:@"ESP Distance"]) self.espDistanceSwitch = sw;
+    if ([label containsString:@"Box"]) self.espBoxSwitch = sw;
+    else if ([label containsString:@"Line"]) self.espLineSwitch = sw;
+    else if ([label containsString:@"Distance"]) self.espDistanceSwitch = sw;
     else if ([label containsString:@"PPX"]) self.ppxSwitch = sw;
 }
 
@@ -94,7 +95,7 @@ BOOL ppxEnabled = NO;
         isLoggedIn = YES;
         [self dismissViewControllerAnimated:YES completion:^{
             MenuViewController *newMenu = [[MenuViewController alloc] init];
-            UIViewController *root = [self getRootViewController];
+            UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
             if (root) [root presentViewController:newMenu animated:YES completion:nil];
         }];
     }
@@ -106,30 +107,22 @@ BOOL ppxEnabled = NO;
 - (void)togglePpx { ppxEnabled = self.ppxSwitch.on; }
 
 - (void)applyAndClose {
-    NSLog(@"[XSNPOWWWWWW] Features appliquées : Box=%d Line=%d Distance=%d PPX=%d", espBoxEnabled, espLineEnabled, espDistanceEnabled, ppxEnabled);
+    NSLog(@"[XSNPOWWWWWW] Features appliquées : Box=%d | Line=%d | Distance=%d | PPX=%d 🔥", espBoxEnabled, espLineEnabled, espDistanceEnabled, ppxEnabled);
     [self dismissViewControllerAnimated:YES completion:nil];
-}
-
-- (UIViewController *)getRootViewController {
-    for (UIScene *scene in [UIApplication sharedApplication].connectedScenes) {
-        if ([scene isKindOfClass:[UIWindowScene class]] && ((UIWindowScene *)scene).activationState == UISceneActivationStateForegroundActive) {
-            return ((UIWindowScene *)scene).keyWindow.rootViewController;
-        }
-    }
-    return nil;
 }
 
 @end
 
-%hook UIWindowScene
-- (void)sceneDidBecomeActive:(UIScene *)scene {
+// Hook simple pour ouvrir le menu après 3 secondes
+%hook UIApplication
+- (void)sendEvent:(UIEvent *)event {
     %orig;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 3 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
             if (!isLoggedIn) {
                 MenuViewController *menu = [[MenuViewController alloc] init];
-                UIViewController *root = [menu getRootViewController];
+                UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
                 if (root) [root presentViewController:menu animated:YES completion:nil];
             }
         });
@@ -137,10 +130,11 @@ BOOL ppxEnabled = NO;
 }
 %end
 
+// PPX hook
 %hook SKPaymentQueue
 - (void)addPayment:(SKPayment *)payment {
     if (ppxEnabled) {
-        NSLog(@"[XSNPOWWWWWW] PPX - Achat gratuit activé pour %@", payment.productIdentifier);
+        NSLog(@"[XSNPOWWWWWW] PPX ACTIVÉ - Achat gratuit pour %@ 💰🍆", payment.productIdentifier);
         return;
     }
     %orig;
@@ -148,5 +142,5 @@ BOOL ppxEnabled = NO;
 %end
 
 %ctor {
-    NSLog(@"[XSNPOWWWWWW] DYLIB INJECTÉ - MENU LOGIN PRÊT À TE FAIRE JOUIR 🔥👾");
+    NSLog(@"[XSNPOWWWWWW] DYLIB INJECTÉ - MENU LOGIN PRÊT À TE FAIRE JOUIR SUR iOS 13+ 🔥👾");
 }
