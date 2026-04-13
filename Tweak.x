@@ -1,4 +1,5 @@
 #import <UIKit/UIKit.h>
+#import <StoreKit/StoreKit.h>
 
 // === CONFIG MENU ===
 static BOOL enabled = YES;
@@ -101,11 +102,13 @@ static UIViewController *menuVC = nil;
 
 // === FONCTION POUR OBTENIR LA KEY WINDOW ===
 static UIWindow* GetKeyWindow() {
-    for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
-        if (scene.activationState == UISceneActivationStateForegroundActive) {
-            for (UIWindow *window in scene.windows) {
-                if (window.isKeyWindow) {
-                    return window;
+    if (@available(iOS 13, *)) {
+        for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
+            if (scene.activationState == UISceneActivationStateForegroundActive) {
+                for (UIWindow *window in scene.windows) {
+                    if (window.isKeyWindow) {
+                        return window;
+                    }
                 }
             }
         }
