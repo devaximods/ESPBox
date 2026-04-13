@@ -1,9 +1,8 @@
-// Tweak.xm - XSNPMODZ MENU FLOTTANT COMPLET + ESP BOX / LINE / DISTANCE / AIMBOT - TARPIN STYLÉ
+// Tweak.xm - XSNPMODZ MENU FLOTTANT STABLE - PLUS DE CRASH AU CLIC
 
 #import <UIKit/UIKit.h>
 #import <StoreKit/StoreKit.h>
 
-// === VARIABLES GLOBALES ===
 BOOL isLoggedIn = NO;
 BOOL espBoxEnabled = NO;
 BOOL espLineEnabled = NO;
@@ -11,19 +10,22 @@ BOOL espDistanceEnabled = NO;
 BOOL aimbotEnabled = NO;
 BOOL ppxEnabled = NO;
 
-// === BOUTON FLOTTANT PERSONNALISABLE ===
 @interface FloatingButton : UIButton
+@property (nonatomic, strong) UITapGestureRecognizer *tapGesture;
 @end
 
 @implementation FloatingButton
 - (instancetype)initWithFrame:(CGRect)frame {
     self = [super initWithFrame:frame];
     if (self) {
-        self.backgroundColor = [UIColor colorWithRed:1.0 green:0.0 blue:0.0 alpha:0.9];
+        self.backgroundColor = [UIColor colorWithRed:1.0 green:0.0 blue:0.0 alpha:0.95];
         self.layer.cornerRadius = 35;
         self.clipsToBounds = YES;
-        [self setTitle:@"🔥" forState:UIControlStateNormal];  // ← CHANGE ÇA POUR TON LOGO (ex: "X" ou "💀")
-        self.titleLabel.font = [UIFont systemFontOfSize:35];
+        [self setTitle:@"XS" forState:UIControlStateNormal];  // ← CHANGE ÇA EN "X" ou "💀" ou ce que tu veux
+        self.titleLabel.font = [UIFont systemFontOfSize:38 weight:UIFontWeightBold];
+        
+        self.tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(openMenu)];
+        [self addGestureRecognizer:self.tapGesture];
         
         UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePan:)];
         [self addGestureRecognizer:pan];
@@ -36,9 +38,19 @@ BOOL ppxEnabled = NO;
     self.center = CGPointMake(self.center.x + translation.x, self.center.y + translation.y);
     [gesture setTranslation:CGPointZero inView:self.superview];
 }
+
+- (void)openMenu {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (!isLoggedIn || ![[[UIApplication sharedApplication] windows] firstObject].rootViewController.presentedViewController) {
+            XSNPMODZMenu *menu = [[XSNPMODZMenu alloc] init];
+            menu.modalPresentationStyle = UIModalPresentationOverFullScreen;
+            UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
+            if (root) [root presentViewController:menu animated:YES completion:nil];
+        }
+    });
+}
 @end
 
-// === MENU PRINCIPAL XSNPMODZ ===
 @interface XSNPMODZMenu : UIViewController
 @property (nonatomic, strong) UITextField *usernameField;
 @property (nonatomic, strong) UITextField *passwordField;
@@ -53,31 +65,27 @@ BOOL ppxEnabled = NO;
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.view.backgroundColor = [UIColor colorWithRed:0.05 green:0.05 blue:0.1 alpha:0.96];
+    self.view.backgroundColor = [UIColor colorWithRed:0.05 green:0.05 blue:0.12 alpha:0.97];
     self.view.layer.cornerRadius = 20;
-    self.view.layer.borderWidth = 3;
+    self.view.layer.borderWidth = 4;
     self.view.layer.borderColor = [UIColor redColor].CGColor;
     
-    // Titre XSNPMODZ bien stylé
-    UILabel *title = [[UILabel alloc] initWithFrame:CGRectMake(0, 20, self.view.frame.size.width, 50)];
+    UILabel *title = [[UILabel alloc] initWithFrame:CGRectMake(0, 15, self.view.frame.size.width, 60)];
     title.text = @"XSNPMODZ";
     title.textColor = [UIColor redColor];
     title.textAlignment = NSTextAlignmentCenter;
-    title.font = [UIFont boldSystemFontOfSize:32];
-    title.shadowColor = [UIColor blackColor];
-    title.shadowOffset = CGSizeMake(2, 2);
+    title.font = [UIFont boldSystemFontOfSize:34];
     [self.view addSubview:title];
     
     if (!isLoggedIn) {
-        // Login
-        self.usernameField = [[UITextField alloc] initWithFrame:CGRectMake(40, 90, self.view.frame.size.width - 80, 45)];
+        self.usernameField = [[UITextField alloc] initWithFrame:CGRectMake(40, 90, self.view.frame.size.width-80, 45)];
         self.usernameField.placeholder = @"Username (nexus ou admin)";
         self.usernameField.borderStyle = UITextBorderStyleRoundedRect;
         self.usernameField.backgroundColor = [UIColor darkGrayColor];
         self.usernameField.textColor = [UIColor whiteColor];
         [self.view addSubview:self.usernameField];
         
-        self.passwordField = [[UITextField alloc] initWithFrame:CGRectMake(40, 150, self.view.frame.size.width - 80, 45)];
+        self.passwordField = [[UITextField alloc] initWithFrame:CGRectMake(40, 150, self.view.frame.size.width-80, 45)];
         self.passwordField.placeholder = @"Password (1234 ou xsn)";
         self.passwordField.secureTextEntry = YES;
         self.passwordField.borderStyle = UITextBorderStyleRoundedRect;
@@ -86,24 +94,23 @@ BOOL ppxEnabled = NO;
         [self.view addSubview:self.passwordField];
         
         UIButton *loginBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-        loginBtn.frame = CGRectMake(40, 220, self.view.frame.size.width - 80, 55);
-        [loginBtn setTitle:@"LOGIN TO DESTROY" forState:UIControlStateNormal];
+        loginBtn.frame = CGRectMake(40, 220, self.view.frame.size.width-80, 55);
+        [loginBtn setTitle:@"LOGIN TO DESTROY EVERYONE" forState:UIControlStateNormal];
         loginBtn.backgroundColor = [UIColor redColor];
         loginBtn.tintColor = [UIColor whiteColor];
         loginBtn.titleLabel.font = [UIFont boldSystemFontOfSize:18];
         [loginBtn addTarget:self action:@selector(loginAction) forControlEvents:UIControlEventTouchUpInside];
         [self.view addSubview:loginBtn];
     } else {
-        // Switches stylés
-        [self createSwitch:@"ESP BOX (Rouge sur tout le monde)" y:90 action:@selector(toggleEspBox) var:&espBoxEnabled];
-        [self createSwitch:@"ESP LINE (Cul transpercé)" y:140 action:@selector(toggleEspLine) var:&espLineEnabled];
+        [self createSwitch:@"ESP BOX (Rouges sur tout le monde)" y:90 action:@selector(toggleEspBox) var:&espBoxEnabled];
+        [self createSwitch:@"ESP LINE (Lignes dans le cul)" y:140 action:@selector(toggleEspLine) var:&espLineEnabled];
         [self createSwitch:@"ESP DISTANCE (Mètres)" y:190 action:@selector(toggleEspDistance) var:&espDistanceEnabled];
         [self createSwitch:@"AIMBOT (Tête auto)" y:240 action:@selector(toggleAimbot) var:&aimbotEnabled];
         [self createSwitch:@"PPX Achats Gratuits" y:290 action:@selector(togglePpx) var:&ppxEnabled];
         
         UIButton *applyBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-        applyBtn.frame = CGRectMake(40, 360, self.view.frame.size.width - 80, 55);
-        [applyBtn setTitle:@"APPLY & HIDE - LET'S FUCK THEM" forState:UIControlStateNormal];
+        applyBtn.frame = CGRectMake(40, 360, self.view.frame.size.width-80, 55);
+        [applyBtn setTitle:@"APPLY & HIDE - FUCK THEM ALL" forState:UIControlStateNormal];
         applyBtn.backgroundColor = [UIColor greenColor];
         applyBtn.tintColor = [UIColor blackColor];
         applyBtn.titleLabel.font = [UIFont boldSystemFontOfSize:18];
@@ -113,13 +120,11 @@ BOOL ppxEnabled = NO;
 }
 
 - (void)createSwitch:(NSString *)label y:(CGFloat)y action:(SEL)action var:(BOOL *)var {
-    UILabel *lbl = [[UILabel alloc] initWithFrame:CGRectMake(40, y, self.view.frame.size.width - 120, 35)];
-    lbl.text = label;
-    lbl.textColor = [UIColor whiteColor];
-    lbl.font = [UIFont systemFontOfSize:16];
+    UILabel *lbl = [[UILabel alloc] initWithFrame:CGRectMake(40, y, self.view.frame.size.width-140, 35)];
+    lbl.text = label; lbl.textColor = [UIColor whiteColor]; lbl.font = [UIFont systemFontOfSize:16];
     [self.view addSubview:lbl];
     
-    UISwitch *sw = [[UISwitch alloc] initWithFrame:CGRectMake(self.view.frame.size.width - 100, y, 60, 35)];
+    UISwitch *sw = [[UISwitch alloc] initWithFrame:CGRectMake(self.view.frame.size.width-110, y, 60, 35)];
     sw.on = *var;
     [sw addTarget:self action:action forControlEvents:UIControlEventValueChanged];
     [self.view addSubview:sw];
@@ -157,48 +162,34 @@ BOOL ppxEnabled = NO;
 
 @end
 
-// === BOUTON FLOTTANT GLOBAL ===
 FloatingButton *floatingBtn = nil;
 
 %hook UIApplication
 - (void)sendEvent:(UIEvent *)event {
-    %orig;
-    static dispatch_once_t once;
-    dispatch_once(&once, ^{
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 2 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-            if (!floatingBtn) {
-                floatingBtn = [[FloatingButton alloc] initWithFrame:CGRectMake(30, 150, 70, 70)];
-                UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
+    %orig;  // On laisse passer l'event normalement
+}
+%end
+
+%ctor {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 3 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+        if (!floatingBtn) {
+            floatingBtn = [[FloatingButton alloc] initWithFrame:CGRectMake(40, 200, 70, 70)];
+            UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
+            if (root && root.view) {
                 [root.view addSubview:floatingBtn];
-                [floatingBtn addTarget:floatingBtn action:@selector(openXSNPMODZ) forControlEvents:UIControlEventTouchUpInside];
+                NSLog(@"[XSNPMODZ] 🔥 Bouton flottant XSNPMODZ injecté - Clique sans crash maintenant !");
             }
-        });
+        }
     });
 }
-%end
 
-%hook FloatingButton
-- (void)openXSNPMODZ {
-    XSNPMODZMenu *menu = [[XSNPMODZMenu alloc] init];
-    menu.modalPresentationStyle = UIModalPresentationOverFullScreen;
-    UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
-    [root presentViewController:menu animated:YES completion:nil];
-}
-%end
-
-// === PPX ===
+// PPX reste
 %hook SKPaymentQueue
 - (void)addPayment:(SKPayment *)payment {
     if (ppxEnabled) {
-        NSLog(@"[XSNPMODZ] PPX ACTIVÉ - Achat gratuit pour %@ 💰🍆", payment.productIdentifier);
+        NSLog(@"[XSNPMODZ] PPX - Achat gratuit pour %@ 💰", payment.productIdentifier);
         return;
     }
     %orig;
 }
 %end
-
-// === PLACEHOLDER POUR ESP + AIMBOT (à compléter avec tes offsets Il2Cpp) ===
-%ctor {
-    NSLog(@"[XSNPMODZ] 🔥 MENU COMPLET INJECTÉ - Bouton flottant + ESP + Aimbot prêt à tout niquer !");
-    // Ici tu ajouteras plus tard le hook OnGUI ou Present pour dessiner les boîtes rouges, lignes, distance et aimbot
-}
