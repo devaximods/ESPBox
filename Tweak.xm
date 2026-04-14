@@ -11,28 +11,25 @@ BOOL speedHackEnabled = NO;
 BOOL teleportEnabled = NO;
 BOOL noRecoilEnabled = NO;
 
-@interface FloatingText : UILabel
+// === CLASSE BOUTON DRAGGABLE ===
+@interface DraggableButton : UIButton
 @end
 
-@implementation FloatingText
+@implementation DraggableButton
 
-- (instancetype)initWithFrame:(CGRect)frame {
+- (instancetype)initWithFrame:(CGRect)frame title:(NSString *)title color:(UIColor *)color {
     self = [super initWithFrame:frame];
     if (self) {
-        self.text = @"XSNPMODZMENU";
-        self.textColor = [UIColor colorWithRed:0.7 green:0.2 blue:1.0 alpha:1.0];
-        self.font = [UIFont boldSystemFontOfSize:20];
-        self.userInteractionEnabled = YES;
-        self.textAlignment = NSTextAlignmentCenter;
-        self.backgroundColor = [UIColor colorWithWhite:0 alpha:0.6];
-        self.layer.cornerRadius = 15;
-        self.clipsToBounds = YES;
+        [self setTitle:title forState:UIControlStateNormal];
+        [self setTitleColor:color forState:UIControlStateNormal];
+        self.titleLabel.font = [UIFont boldSystemFontOfSize:14];
+        self.backgroundColor = [UIColor colorWithWhite:0.15 alpha:0.9];
+        self.layer.cornerRadius = 12;
+        self.layer.borderWidth = 1;
+        self.layer.borderColor = color.CGColor;
         
         UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePan:)];
         [self addGestureRecognizer:pan];
-        
-        UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(toggleMenu)];
-        [self addGestureRecognizer:tap];
     }
     return self;
 }
@@ -43,116 +40,97 @@ BOOL noRecoilEnabled = NO;
     [gesture setTranslation:CGPointZero inView:self.superview];
 }
 
-- (void)toggleMenu {
-    static UIView *menuPanel = nil;
-    if (menuPanel && menuPanel.superview) {
-        [menuPanel removeFromSuperview];
-        menuPanel = nil;
-    } else {
-        CGFloat screenW = [UIScreen mainScreen].bounds.size.width;
-        
-        menuPanel = [[UIView alloc] initWithFrame:CGRectMake(20, 100, screenW - 40, 430)];
-        menuPanel.backgroundColor = [UIColor colorWithRed:0.05 green:0.05 blue:0.1 alpha:0.95];
-        menuPanel.layer.cornerRadius = 20;
-        menuPanel.layer.borderWidth = 1;
-        menuPanel.layer.borderColor = [UIColor colorWithRed:0.7 green:0.2 blue:1.0 alpha:1.0].CGColor;
-        
-        // Titre
-        UILabel *title = [[UILabel alloc] initWithFrame:CGRectMake(0, 15, menuPanel.frame.size.width, 30)];
-        title.text = @"🔥 XSNP MOD MENU 🔥";
-        title.textColor = [UIColor colorWithRed:0.7 green:0.2 blue:1.0 alpha:1.0];
-        title.font = [UIFont boldSystemFontOfSize:18];
-        title.textAlignment = NSTextAlignmentCenter;
-        [menuPanel addSubview:title];
-        
-        // Ligne séparatrice
-        UIView *line = [[UIView alloc] initWithFrame:CGRectMake(10, 55, menuPanel.frame.size.width - 20, 1)];
-        line.backgroundColor = [UIColor grayColor];
-        [menuPanel addSubview:line];
-        
-        // BOUTONS (style Free Fire)
-        [self addButton:@"ESP BOX" y:70 action:@selector(toggleESPBox) color:[UIColor cyanColor] to:menuPanel];
-        [self addButton:@"ESP LINE" y:115 action:@selector(toggleESPLine) color:[UIColor cyanColor] to:menuPanel];
-        [self addButton:@"ESP DISTANCE" y:160 action:@selector(toggleESPDistance) color:[UIColor cyanColor] to:menuPanel];
-        [self addButton:@"ESP HEALTH" y:205 action:@selector(toggleESPHealth) color:[UIColor cyanColor] to:menuPanel];
-        [self addButton:@"FLY HACK" y:250 action:@selector(toggleFlyHack) color:[UIColor orangeColor] to:menuPanel];
-        [self addButton:@"SPEED HACK" y:295 action:@selector(toggleSpeedHack) color:[UIColor orangeColor] to:menuPanel];
-        [self addButton:@"NO RECOIL" y:340 action:@selector(toggleNoRecoil) color:[UIColor redColor] to:menuPanel];
-        [self addButton:@"TELEPORT" y:385 action:@selector(toggleTeleport) color:[UIColor redColor] to:menuPanel];
-        
-        UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
-        [root.view addSubview:menuPanel];
-    }
-}
-
-- (void)addButton:(NSString *)title y:(CGFloat)y action:(SEL)action color:(UIColor *)color to:(UIView *)panel {
-    UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
-    btn.frame = CGRectMake(20, y, panel.frame.size.width - 40, 38);
-    [btn setTitle:title forState:UIControlStateNormal];
-    [btn setTitleColor:color forState:UIControlStateNormal];
-    btn.titleLabel.font = [UIFont boldSystemFontOfSize:15];
-    btn.backgroundColor = [UIColor colorWithWhite:0.15 alpha:1];
-    btn.layer.cornerRadius = 8;
-    btn.contentHorizontalAlignment = UIControlContentHorizontalAlignmentCenter;
-    [btn addTarget:self action:action forControlEvents:UIControlEventTouchUpInside];
-    [panel addSubview:btn];
-}
+@end
 
 // === ACTIONS DES BOUTONS ===
-- (void)toggleESPBox {
+void toggleESPBox() {
     espBoxEnabled = !espBoxEnabled;
     NSLog(@"ESP BOX: %@", espBoxEnabled ? @"ON" : @"OFF");
 }
-
-- (void)toggleESPLine {
+void toggleESPLine() {
     espLineEnabled = !espLineEnabled;
     NSLog(@"ESP LINE: %@", espLineEnabled ? @"ON" : @"OFF");
 }
-
-- (void)toggleESPDistance {
+void toggleESPDistance() {
     espDistanceEnabled = !espDistanceEnabled;
     NSLog(@"ESP DISTANCE: %@", espDistanceEnabled ? @"ON" : @"OFF");
 }
-
-- (void)toggleESPHealth {
+void toggleESPHealth() {
     espHealthEnabled = !espHealthEnabled;
     NSLog(@"ESP HEALTH: %@", espHealthEnabled ? @"ON" : @"OFF");
 }
-
-- (void)toggleFlyHack {
+void toggleFlyHack() {
     flyHackEnabled = !flyHackEnabled;
     NSLog(@"FLY HACK: %@", flyHackEnabled ? @"ON" : @"OFF");
 }
-
-- (void)toggleSpeedHack {
+void toggleSpeedHack() {
     speedHackEnabled = !speedHackEnabled;
     NSLog(@"SPEED HACK: %@", speedHackEnabled ? @"ON" : @"OFF");
 }
-
-- (void)toggleNoRecoil {
+void toggleTeleport() {
+    teleportEnabled = !teleportEnabled;
+    NSLog(@"TELEPORT: %@", teleportEnabled ? @"ON" : @"OFF");
+}
+void toggleNoRecoil() {
     noRecoilEnabled = !noRecoilEnabled;
     NSLog(@"NO RECOIL: %@", noRecoilEnabled ? @"ON" : @"OFF");
 }
 
-- (void)toggleTeleport {
-    teleportEnabled = !teleportEnabled;
-    NSLog(@"TELEPORT: %@", teleportEnabled ? @"ON" : @"OFF");
+// === CRÉATION DES BOUTONS DISPERSÉS ===
+static void CreateButtons() {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
+        if (!root || !root.view) return;
+        
+        CGSize screenSize = [UIScreen mainScreen].bounds.size;
+        
+        // Bouton ESP BOX (en haut à gauche)
+        DraggableButton *btnESPBox = [[DraggableButton alloc] initWithFrame:CGRectMake(20, 80, 110, 45) title:@"ESP BOX" color:[UIColor cyanColor]];
+        [btnESPBox addTarget:nil action:@selector(toggleESPBox) forControlEvents:UIControlEventTouchUpInside];
+        [root.view addSubview:btnESPBox];
+        
+        // Bouton ESP LINE (à côté)
+        DraggableButton *btnESPLine = [[DraggableButton alloc] initWithFrame:CGRectMake(140, 80, 110, 45) title:@"ESP LINE" color:[UIColor cyanColor]];
+        [btnESPLine addTarget:nil action:@selector(toggleESPLine) forControlEvents:UIControlEventTouchUpInside];
+        [root.view addSubview:btnESPLine];
+        
+        // Bouton ESP DISTANCE (en dessous)
+        DraggableButton *btnESPDistance = [[DraggableButton alloc] initWithFrame:CGRectMake(20, 135, 120, 45) title:@"ESP DIST" color:[UIColor cyanColor]];
+        [btnESPDistance addTarget:nil action:@selector(toggleESPDistance) forControlEvents:UIControlEventTouchUpInside];
+        [root.view addSubview:btnESPDistance];
+        
+        // Bouton ESP HEALTH (à côté)
+        DraggableButton *btnESPHealth = [[DraggableButton alloc] initWithFrame:CGRectMake(150, 135, 120, 45) title:@"ESP HEALTH" color:[UIColor cyanColor]];
+        [btnESPHealth addTarget:nil action:@selector(toggleESPHealth) forControlEvents:UIControlEventTouchUpInside];
+        [root.view addSubview:btnESPHealth];
+        
+        // Bouton FLY HACK (à gauche, en bas)
+        DraggableButton *btnFly = [[DraggableButton alloc] initWithFrame:CGRectMake(20, screenSize.height - 180, 100, 45) title:@"FLY HACK" color:[UIColor orangeColor]];
+        [btnFly addTarget:nil action:@selector(toggleFlyHack) forControlEvents:UIControlEventTouchUpInside];
+        [root.view addSubview:btnFly];
+        
+        // Bouton SPEED HACK (à côté)
+        DraggableButton *btnSpeed = [[DraggableButton alloc] initWithFrame:CGRectMake(130, screenSize.height - 180, 110, 45) title:@"SPEED" color:[UIColor orangeColor]];
+        [btnSpeed addTarget:nil action:@selector(toggleSpeedHack) forControlEvents:UIControlEventTouchUpInside];
+        [root.view addSubview:btnSpeed];
+        
+        // Bouton TELEPORT (à gauche, plus bas)
+        DraggableButton *btnTeleport = [[DraggableButton alloc] initWithFrame:CGRectMake(20, screenSize.height - 125, 100, 45) title:@"TELEPORT" color:[UIColor redColor]];
+        [btnTeleport addTarget:nil action:@selector(toggleTeleport) forControlEvents:UIControlEventTouchUpInside];
+        [root.view addSubview:btnTeleport];
+        
+        // Bouton NO RECOIL (à côté)
+        DraggableButton *btnNoRecoil = [[DraggableButton alloc] initWithFrame:CGRectMake(130, screenSize.height - 125, 110, 45) title:@"NO RECOIL" color:[UIColor redColor]];
+        [btnNoRecoil addTarget:nil action:@selector(toggleNoRecoil) forControlEvents:UIControlEventTouchUpInside];
+        [root.view addSubview:btnNoRecoil];
+        
+        NSLog(@"✅ 8 boutons dispersés créés (draggables)");
+    });
 }
-
-@end
-
-FloatingText *floatingText = nil;
 
 %ctor {
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 2 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-        if (!floatingText) {
-            floatingText = [[FloatingText alloc] initWithFrame:CGRectMake(70, 80, 200, 40)];
-            UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
-            if (root && root.view) {
-                [root.view addSubview:floatingText];
-                NSLog(@"✅ XSNPMODZMENU chargé");
-            }
-        }
+        CreateButtons();
     });
 }
 
