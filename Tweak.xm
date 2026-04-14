@@ -1,9 +1,8 @@
-// Tweak.xm - XSNPMODZ MENU GRIS TRANSPARENT + 3 CLICS + MESSAGE HACKED + SEULEMENT ESP (VERSION SIMPLE)
+// Tweak.xm - VERSION SIMPLE ET PROPRE - 3 CLICS + MENU GRIS
 
 #import <UIKit/UIKit.h>
 #import <StoreKit/StoreKit.h>
 
-// Variables globales
 BOOL menuOpen = NO;
 int tapCount = 0;
 
@@ -46,54 +45,51 @@ BOOL espJoystickEnabled = NO;
             tapCount++;
             if (tapCount >= 3) {
                 tapCount = 0;
-                [self showMenu];
+                // OUVERTURE DU MENU
+                if (menuOpen) return;
+                menuOpen = YES;
+                
+                CGFloat w = [[UIScreen mainScreen] bounds].size.width;
+                UIView *panel = [[UIView alloc] initWithFrame:CGRectMake(30, 100, w - 60, 460)];
+                panel.backgroundColor = [UIColor colorWithRed:0.13 green:0.13 blue:0.16 alpha:0.93];
+                panel.layer.cornerRadius = 24;
+                panel.layer.borderWidth = 2.5;
+                panel.layer.borderColor = [UIColor colorWithRed:0.7 green:0.7 blue:0.75 alpha:1.0].CGColor;
+                
+                UILabel *title = [[UILabel alloc] initWithFrame:CGRectMake(0, 20, panel.frame.size.width, 45)];
+                title.text = @"XSNPMODZ";
+                title.textColor = [UIColor whiteColor];
+                title.font = [UIFont boldSystemFontOfSize:28];
+                title.textAlignment = NSTextAlignmentCenter;
+                [panel addSubview:title];
+                
+                // Switches ESP seulement
+                [self addSwitchToPanel:panel label:@"ESP BOX" y:80 var:&espBoxEnabled];
+                [self addSwitchToPanel:panel label:@"ESP LINE" y:130 var:&espLineEnabled];
+                [self addSwitchToPanel:panel label:@"ESP DISTANCE" y:180 var:&espDistanceEnabled];
+                [self addSwitchToPanel:panel label:@"ESP HEALTH" y:230 var:&espHealthEnabled];
+                [self addSwitchToPanel:panel label:@"ESP SKELETON" y:280 var:&espSkeletonEnabled];
+                [self addSwitchToPanel:panel label:@"JOYSTICK PLAYER" y:330 var:&espJoystickEnabled];
+                
+                UIButton *closeBtn = [UIButton buttonWithType:UIButtonTypeSystem];
+                closeBtn.frame = CGRectMake(25, 370, panel.frame.size.width - 50, 55);
+                [closeBtn setTitle:@"CLOSE MENU" forState:UIControlStateNormal];
+                closeBtn.backgroundColor = [UIColor colorWithRed:0.2 green:0.8 blue:0.2 alpha:1.0];
+                closeBtn.layer.cornerRadius = 16;
+                [closeBtn addTarget:panel action:@selector(removeFromSuperview) forControlEvents:UIControlEventTouchUpInside];
+                [panel addSubview:closeBtn];
+                
+                UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:panel action:@selector(handlePan:)];
+                [panel addGestureRecognizer:pan];
+                
+                UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
+                [root.view addSubview:panel];
             }
         }
     }
 }
 
-- (void)showMenu {
-    if (menuOpen) return;
-    menuOpen = YES;
-    
-    CGFloat w = [[UIScreen mainScreen] bounds].size.width;
-    UIView *panel = [[UIView alloc] initWithFrame:CGRectMake(30, 100, w - 60, 460)];
-    panel.backgroundColor = [UIColor colorWithRed:0.13 green:0.13 blue:0.16 alpha:0.93];
-    panel.layer.cornerRadius = 24;
-    panel.layer.borderWidth = 2.5;
-    panel.layer.borderColor = [UIColor colorWithRed:0.7 green:0.7 blue:0.75 alpha:1.0].CGColor;
-    
-    UILabel *title = [[UILabel alloc] initWithFrame:CGRectMake(0, 20, panel.frame.size.width, 45)];
-    title.text = @"XSNPMODZ";
-    title.textColor = [UIColor whiteColor];
-    title.font = [UIFont boldSystemFontOfSize:28];
-    title.textAlignment = NSTextAlignmentCenter;
-    [panel addSubview:title];
-    
-    // ESP seulement
-    [self addSwitch:@"ESP BOX" to:panel atY:80 var:&espBoxEnabled];
-    [self addSwitch:@"ESP LINE" to:panel atY:130 var:&espLineEnabled];
-    [self addSwitch:@"ESP DISTANCE" to:panel atY:180 var:&espDistanceEnabled];
-    [self addSwitch:@"ESP HEALTH" to:panel atY:230 var:&espHealthEnabled];
-    [self addSwitch:@"ESP SKELETON" to:panel atY:280 var:&espSkeletonEnabled];
-    [self addSwitch:@"JOYSTICK PLAYER" to:panel atY:330 var:&espJoystickEnabled];
-    
-    UIButton *closeBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-    closeBtn.frame = CGRectMake(25, 370, panel.frame.size.width - 50, 55);
-    [closeBtn setTitle:@"CLOSE MENU" forState:UIControlStateNormal];
-    closeBtn.backgroundColor = [UIColor colorWithRed:0.2 green:0.8 blue:0.2 alpha:1.0];
-    closeBtn.layer.cornerRadius = 16;
-    [closeBtn addTarget:panel action:@selector(removeFromSuperview) forControlEvents:UIControlEventTouchUpInside];
-    [panel addSubview:closeBtn];
-    
-    UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:panel action:@selector(handlePan:)];
-    [panel addGestureRecognizer:pan];
-    
-    UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
-    [root.view addSubview:panel];
-}
-
-- (void)addSwitch:(NSString *)label to:(UIView *)panel atY:(CGFloat)y var:(BOOL *)var {
+- (void)addSwitchToPanel:(UIView *)panel label:(NSString *)label y:(CGFloat)y var:(BOOL *)var {
     UILabel *lbl = [[UILabel alloc] initWithFrame:CGRectMake(25, y, 210, 40)];
     lbl.text = label;
     lbl.textColor = [UIColor whiteColor];
@@ -102,11 +98,7 @@ BOOL espJoystickEnabled = NO;
     
     UISwitch *sw = [[UISwitch alloc] initWithFrame:CGRectMake(panel.frame.size.width - 95, y + 6, 70, 35)];
     sw.on = *var;
-    [sw addTarget:self action:@selector(switchChanged:) forControlEvents:UIControlEventValueChanged];
     [panel addSubview:sw];
-}
-
-- (void)switchChanged:(UISwitch *)sw {
 }
 
 - (void)handlePan:(UIPanGestureRecognizer *)gesture {
