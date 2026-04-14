@@ -2,15 +2,15 @@
 #import <StoreKit/StoreKit.h>
 
 // ============ TES OFFSETS ============
-#define OFFSET_GET_LOCAL_PLAYER    0x3585978   // get_MyPlayerInfo
-#define OFFSET_GET_PLAYERS_LIST    0x5D70930   // get_Players
-#define OFFSET_GET_POSITION        0x1185A30   // get_Position
-#define OFFSET_GET_TEAM            0x3AB244C   // get_TeamID
-#define OFFSET_GET_ROTATION        0x1185C20   // get_Rotation (Quaternion)
-#define OFFSET_SET_ROTATION        0x1185D1C   // set_Rotation (Quaternion)
-#define OFFSET_GET_HEALTH          0x6161388   // get_Health
-#define OFFSET_WORLD_TO_SCREEN     0x84E6A54   // WorldToScreenPoint
-#define OFFSET_CAMERA_GET_MAIN     0x84E7148   // Camera.get_main
+#define OFFSET_GET_LOCAL_PLAYER    0x3585978
+#define OFFSET_GET_PLAYERS_LIST    0x5D70930
+#define OFFSET_GET_POSITION        0x1185A30
+#define OFFSET_GET_TEAM            0x3AB244C
+#define OFFSET_GET_ROTATION        0x1185C20
+#define OFFSET_SET_ROTATION        0x1185D1C
+#define OFFSET_GET_HEALTH          0x6161388
+#define OFFSET_WORLD_TO_SCREEN     0x84E6A54
+#define OFFSET_CAMERA_GET_MAIN     0x84E7148
 
 // ============ VARIABLES ============
 BOOL espBoxEnabled = NO;
@@ -60,10 +60,11 @@ static int GetTeam(void* player) {
     return func(player);
 }
 
-static int GetHealth(void* player) {
-    int (*func)(void*) = (int (*)(void*))OFFSET_GET_HEALTH;
-    return func(player);
-}
+// GetHealth commentée (pas encore utilisée)
+// static int GetHealth(void* player) {
+//     int (*func)(void*) = (int (*)(void*))OFFSET_GET_HEALTH;
+//     return func(player);
+// }
 
 static quaternion_t GetRotationQuat(void* player) {
     quaternion_t (*func)(void*) = (quaternion_t (*)(void*))OFFSET_GET_ROTATION;
@@ -75,13 +76,11 @@ static void SetRotationQuat(void* player, quaternion_t rot) {
     func(player, rot);
 }
 
-// Convertir Quaternion en angle Yaw (en degrés)
 static float QuaternionToYaw(quaternion_t q) {
     float yaw = atan2(2.0f * (q.y * q.w + q.x * q.z), 1.0f - 2.0f * (q.y * q.y + q.x * q.x));
     return yaw * 180.0f / M_PI;
 }
 
-// Convertir angle Yaw en Quaternion
 static quaternion_t YawToQuaternion(float yaw) {
     quaternion_t q;
     float rad = yaw * M_PI / 180.0f;
@@ -93,18 +92,18 @@ static quaternion_t YawToQuaternion(float yaw) {
     return q;
 }
 
-// ============ CAMERA & WORLD TO SCREEN ============
-static void* GetMainCamera() {
-    void* (*func)() = (void* (*)())OFFSET_CAMERA_GET_MAIN;
-    return func();
-}
+// ============ CAMERA (commentée car pas encore utilisée) ============
+// static void* GetMainCamera() {
+//     void* (*func)() = (void* (*)())OFFSET_CAMERA_GET_MAIN;
+//     return func();
+// }
 
-static vec3_t WorldToScreenPoint(vec3_t worldPos) {
-    vec3_t (*func)(void*, vec3_t) = (vec3_t (*)(void*, vec3_t))OFFSET_WORLD_TO_SCREEN;
-    void* camera = GetMainCamera();
-    if (!camera) return (vec3_t){0,0,0};
-    return func(camera, worldPos);
-}
+// static vec3_t WorldToScreenPoint(vec3_t worldPos) {
+//     vec3_t (*func)(void*, vec3_t) = (vec3_t (*)(void*, vec3_t))OFFSET_WORLD_TO_SCREEN;
+//     void* camera = GetMainCamera();
+//     if (!camera) return (vec3_t){0,0,0};
+//     return func(camera, worldPos);
+// }
 
 // ============ UPDATE GLOBAL ============
 static void UpdateGame() {
@@ -159,11 +158,6 @@ static void UpdateGame() {
                 float targetYaw = atan2(dz, dx) * 180.0f / M_PI;
                 SetRotationQuat(localPlayer, YawToQuaternion(targetYaw));
             }
-        }
-        
-        // ESP BOX (si activé)
-        if (espBoxEnabled || espLineEnabled || espDistanceEnabled || espHealthEnabled) {
-            // À implémenter avec WorldToScreenPoint
         }
     }
 }
