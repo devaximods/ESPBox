@@ -1,9 +1,9 @@
-// Tweak.xm - XSNPMODZ MENU FLOTTANT GRIS TRANSPARENT - VERSION PROPRE
+// Tweak.xm - XSNPMODZMENU TEXTE VIOLET FLOTTANT + BOUTONS QUI SORTENT
 
 #import <UIKit/UIKit.h>
 #import <StoreKit/StoreKit.h>
 
-// Variables ESP seulement
+// Variables ESP
 BOOL espBoxEnabled = NO;
 BOOL espLineEnabled = NO;
 BOOL espDistanceEnabled = NO;
@@ -11,22 +11,24 @@ BOOL espHealthEnabled = NO;
 BOOL espSkeletonEnabled = NO;
 BOOL espJoystickEnabled = NO;
 
-@interface FloatingButton : UIButton
+@interface FloatingText : UILabel
 @end
 
-@implementation FloatingButton
+@implementation FloatingText
 - (instancetype)initWithFrame:(CGRect)frame {
     self = [super initWithFrame:frame];
     if (self) {
-        self.backgroundColor = [UIColor colorWithRed:1.0 green:0.0 blue:0.0 alpha:0.8];
-        self.layer.cornerRadius = 25;
-        [self setTitle:@"X" forState:UIControlStateNormal];
-        self.titleLabel.font = [UIFont boldSystemFontOfSize:24];
+        self.text = @"XSNPMODZMENU";
+        self.textColor = [UIColor colorWithRed:0.6 green:0.0 blue:1.0 alpha:1.0]; // violet
+        self.font = [UIFont boldSystemFontOfSize:22];
+        self.userInteractionEnabled = YES;
+        self.textAlignment = NSTextAlignmentCenter;
         
         UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePan:)];
         [self addGestureRecognizer:pan];
         
-        [self addTarget:self action:@selector(openMenu) forControlEvents:UIControlEventTouchUpInside];
+        UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(toggleButtons)];
+        [self addGestureRecognizer:tap];
     }
     return self;
 }
@@ -37,65 +39,53 @@ BOOL espJoystickEnabled = NO;
     [gesture setTranslation:CGPointZero inView:self.superview];
 }
 
-- (void)openMenu {
-    CGFloat w = [[UIScreen mainScreen] bounds].size.width;
-    UIView *panel = [[UIView alloc] initWithFrame:CGRectMake(30, 120, w - 60, 380)];
-    panel.backgroundColor = [UIColor colorWithRed:0.13 green:0.13 blue:0.16 alpha:0.93];
-    panel.layer.cornerRadius = 22;
-    panel.layer.borderWidth = 2;
-    panel.layer.borderColor = [UIColor colorWithRed:0.7 green:0.7 blue:0.75 alpha:1.0].CGColor;
-    
-    UILabel *title = [[UILabel alloc] initWithFrame:CGRectMake(0, 15, panel.frame.size.width, 45)];
-    title.text = @"XSNPMODZ";
-    title.textColor = [UIColor whiteColor];
-    title.font = [UIFont boldSystemFontOfSize:26];
-    title.textAlignment = NSTextAlignmentCenter;
-    [panel addSubview:title];
-    
-    [self addSwitch:@"ESP BOX" to:panel y:70 var:&espBoxEnabled];
-    [self addSwitch:@"ESP LINE" to:panel y:110 var:&espLineEnabled];
-    [self addSwitch:@"ESP DISTANCE" to:panel y:150 var:&espDistanceEnabled];
-    [self addSwitch:@"ESP HEALTH" to:panel y:190 var:&espHealthEnabled];
-    [self addSwitch:@"ESP SKELETON" to:panel y:230 var:&espSkeletonEnabled];
-    [self addSwitch:@"JOYSTICK PLAYER" to:panel y:270 var:&espJoystickEnabled];
-    
-    UIButton *closeBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-    closeBtn.frame = CGRectMake(30, 320, panel.frame.size.width - 60, 50);
-    [closeBtn setTitle:@"CLOSE MENU" forState:UIControlStateNormal];
-    closeBtn.backgroundColor = [UIColor colorWithRed:0.2 green:0.8 blue:0.2 alpha:1.0];
-    closeBtn.layer.cornerRadius = 14;
-    [closeBtn addTarget:panel action:@selector(removeFromSuperview) forControlEvents:UIControlEventTouchUpInside];
-    [panel addSubview:closeBtn];
-    
-    UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:panel action:@selector(handlePan:)];
-    [panel addGestureRecognizer:pan];
-    
-    UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
-    [root.view addSubview:panel];
+- (void)toggleButtons {
+    static UIView *buttonPanel = nil;
+    if (buttonPanel && buttonPanel.superview) {
+        [buttonPanel removeFromSuperview];
+        buttonPanel = nil;
+    } else {
+        CGFloat w = [[UIScreen mainScreen] bounds].size.width;
+        buttonPanel = [[UIView alloc] initWithFrame:CGRectMake(40, 180, w - 80, 380)];
+        buttonPanel.backgroundColor = [UIColor colorWithRed:0.1 green:0.1 blue:0.15 alpha:0.92];
+        buttonPanel.layer.cornerRadius = 20;
+        buttonPanel.layer.borderWidth = 2;
+        buttonPanel.layer.borderColor = [UIColor colorWithRed:0.7 green:0.3 blue:1.0 alpha:1.0].CGColor;
+        
+        [self addSwitch:@"ESP BOX" to:buttonPanel y:30 var:&espBoxEnabled];
+        [self addSwitch:@"ESP LINE" to:buttonPanel y:80 var:&espLineEnabled];
+        [self addSwitch:@"ESP DISTANCE" to:buttonPanel y:130 var:&espDistanceEnabled];
+        [self addSwitch:@"ESP HEALTH" to:buttonPanel y:180 var:&espHealthEnabled];
+        [self addSwitch:@"ESP SKELETON" to:buttonPanel y:230 var:&espSkeletonEnabled];
+        [self addSwitch:@"JOYSTICK PLAYER" to:buttonPanel y:280 var:&espJoystickEnabled];
+        
+        UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
+        [root.view addSubview:buttonPanel];
+    }
 }
 
 - (void)addSwitch:(NSString *)label to:(UIView *)panel y:(CGFloat)y var:(BOOL *)var {
-    UILabel *lbl = [[UILabel alloc] initWithFrame:CGRectMake(25, y, 200, 40)];
+    UILabel *lbl = [[UILabel alloc] initWithFrame:CGRectMake(20, y, 200, 40)];
     lbl.text = label;
     lbl.textColor = [UIColor whiteColor];
     [panel addSubview:lbl];
     
-    UISwitch *sw = [[UISwitch alloc] initWithFrame:CGRectMake(panel.frame.size.width - 95, y + 6, 70, 35)];
+    UISwitch *sw = [[UISwitch alloc] initWithFrame:CGRectMake(panel.frame.size.width - 100, y + 6, 70, 35)];
     sw.on = *var;
     [panel addSubview:sw];
 }
 @end
 
-FloatingButton *floatingBtn = nil;
+FloatingText *floatingText = nil;
 
 %ctor {
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 2 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-        if (!floatingBtn) {
-            floatingBtn = [[FloatingButton alloc] initWithFrame:CGRectMake(30, 150, 50, 50)];
+        if (!floatingText) {
+            floatingText = [[FloatingText alloc] initWithFrame:CGRectMake(80, 80, 220, 40)];
             UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
             if (root && root.view) {
-                [root.view addSubview:floatingBtn];
-                NSLog(@"[XSNPMODZ] 🔥 Bouton flottant + panneau gris injecté");
+                [root.view addSubview:floatingText];
+                NSLog(@"[XSNPMODZ] 🔥 Texte violet flottant + boutons qui sortent injecté");
             }
         }
     });
