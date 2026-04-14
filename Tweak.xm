@@ -88,7 +88,7 @@ static BOOL switchesHidden = NO;
 
 @end
 
-// === ACTIONS DES SWITCHES (fonctions globales) ===
+// === ACTIONS DES SWITCHES ===
 void switchESPBox(UISwitch *sender) {
     espBoxEnabled = sender.isOn;
     NSLog(@"ESP BOX: %@", espBoxEnabled ? @"ON ✅" : @"OFF ❌");
@@ -108,20 +108,6 @@ void switchESPHealth(UISwitch *sender) {
 void switchJoyPlayer(UISwitch *sender) {
     joyPlayerEnabled = sender.isOn;
     NSLog(@"JOYPLAYER: %@", joyPlayerEnabled ? @"ON ✅" : @"OFF ❌");
-}
-
-// === SECRET MOD (fonction globale) ===
-void toggleSecretMode() {
-    switchesHidden = !switchesHidden;
-    for (DraggableContainer *container in allContainers) {
-        container.hidden = switchesHidden;
-    }
-    if (switchesHidden) {
-        [secretButton setTitle:@"🔐" forState:UIControlStateNormal];
-    } else {
-        [secretButton setTitle:@"🔓" forState:UIControlStateNormal];
-    }
-    NSLog(@"SECRET MOD: %@", switchesHidden ? @"CACHÉ 🔐" : @"VISIBLE 🔓");
 }
 
 // === CRÉATION DE L'UI ===
@@ -147,7 +133,9 @@ static void CreateUI() {
         
         // Bouton SECRET MOD draggable
         secretButton = [[SecretDraggableButton alloc] initWithFrame:CGRectMake([UIScreen mainScreen].bounds.size.width - 50, 40, 40, 40)];
-        [secretButton addTarget:nil action:@selector(toggleSecretMode) forControlEvents:UIControlEventTouchUpInside];
+        
+        // Ajout du target directement sur le bouton
+        [secretButton addTarget:secretButton action:@selector(toggleSecret) forControlEvents:UIControlEventTouchUpInside];
         [root.view addSubview:secretButton];
         
         // Ligne 1
@@ -180,6 +168,24 @@ static void CreateUI() {
         NSLog(@"✅ UI créée : 5 switches + bouton secret");
     });
 }
+
+// === CATEGORY SUR UIButton POUR SECRET MOD ===
+@implementation UIButton (SecretMod)
+
+- (void)toggleSecret {
+    switchesHidden = !switchesHidden;
+    for (DraggableContainer *container in allContainers) {
+        container.hidden = switchesHidden;
+    }
+    if (switchesHidden) {
+        [secretButton setTitle:@"🔐" forState:UIControlStateNormal];
+    } else {
+        [secretButton setTitle:@"🔓" forState:UIControlStateNormal];
+    }
+    NSLog(@"SECRET MOD: %@", switchesHidden ? @"CACHÉ 🔐" : @"VISIBLE 🔓");
+}
+
+@end
 
 %ctor {
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1.5 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
