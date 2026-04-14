@@ -50,9 +50,8 @@ BOOL noRecoilEnabled = NO;
         menuPanel = nil;
     } else {
         CGFloat screenW = [UIScreen mainScreen].bounds.size.width;
-        CGFloat screenH = [UIScreen mainScreen].bounds.size.height;
         
-        menuPanel = [[UIView alloc] initWithFrame:CGRectMake(20, 100, screenW - 40, 400)];
+        menuPanel = [[UIView alloc] initWithFrame:CGRectMake(20, 100, screenW - 40, 430)];
         menuPanel.backgroundColor = [UIColor colorWithRed:0.05 green:0.05 blue:0.1 alpha:0.95];
         menuPanel.layer.cornerRadius = 20;
         menuPanel.layer.borderWidth = 1;
@@ -73,12 +72,13 @@ BOOL noRecoilEnabled = NO;
         
         // BOUTONS (style Free Fire)
         [self addButton:@"ESP BOX" y:70 action:@selector(toggleESPBox) color:[UIColor cyanColor] to:menuPanel];
-        [self addButton:@"ESP LINE" y:120 action:@selector(toggleESPLine) color:[UIColor cyanColor] to:menuPanel];
-        [self addButton:@"ESP DISTANCE" y:170 action:@selector(toggleESPDistance) color:[UIColor cyanColor] to:menuPanel];
-        [self addButton:@"ESP HEALTH" y:220 action:@selector(toggleESPHealth) color:[UIColor cyanColor] to:menuPanel];
-        [self addButton:@"FLY HACK" y:270 action:@selector(toggleFlyHack) color:[UIColor orangeColor] to:menuPanel];
-        [self addButton:@"SPEED HACK" y:320 action:@selector(toggleSpeedHack) color:[UIColor orangeColor] to:menuPanel];
-        [self addButton:@"NO RECOIL" y:370 action:@selector(toggleNoRecoil) color:[UIColor redColor] to:menuPanel];
+        [self addButton:@"ESP LINE" y:115 action:@selector(toggleESPLine) color:[UIColor cyanColor] to:menuPanel];
+        [self addButton:@"ESP DISTANCE" y:160 action:@selector(toggleESPDistance) color:[UIColor cyanColor] to:menuPanel];
+        [self addButton:@"ESP HEALTH" y:205 action:@selector(toggleESPHealth) color:[UIColor cyanColor] to:menuPanel];
+        [self addButton:@"FLY HACK" y:250 action:@selector(toggleFlyHack) color:[UIColor orangeColor] to:menuPanel];
+        [self addButton:@"SPEED HACK" y:295 action:@selector(toggleSpeedHack) color:[UIColor orangeColor] to:menuPanel];
+        [self addButton:@"NO RECOIL" y:340 action:@selector(toggleNoRecoil) color:[UIColor redColor] to:menuPanel];
+        [self addButton:@"TELEPORT" y:385 action:@selector(toggleTeleport) color:[UIColor redColor] to:menuPanel];
         
         UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
         [root.view addSubview:menuPanel];
@@ -87,12 +87,12 @@ BOOL noRecoilEnabled = NO;
 
 - (void)addButton:(NSString *)title y:(CGFloat)y action:(SEL)action color:(UIColor *)color to:(UIView *)panel {
     UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
-    btn.frame = CGRectMake(20, y, panel.frame.size.width - 40, 40);
+    btn.frame = CGRectMake(20, y, panel.frame.size.width - 40, 38);
     [btn setTitle:title forState:UIControlStateNormal];
     [btn setTitleColor:color forState:UIControlStateNormal];
-    btn.titleLabel.font = [UIFont boldSystemFontOfSize:16];
+    btn.titleLabel.font = [UIFont boldSystemFontOfSize:15];
     btn.backgroundColor = [UIColor colorWithWhite:0.15 alpha:1];
-    btn.layer.cornerRadius = 10;
+    btn.layer.cornerRadius = 8;
     btn.contentHorizontalAlignment = UIControlContentHorizontalAlignmentCenter;
     [btn addTarget:self action:action forControlEvents:UIControlEventTouchUpInside];
     [panel addSubview:btn];
@@ -132,6 +132,11 @@ BOOL noRecoilEnabled = NO;
 - (void)toggleNoRecoil {
     noRecoilEnabled = !noRecoilEnabled;
     NSLog(@"NO RECOIL: %@", noRecoilEnabled ? @"ON" : @"OFF");
+}
+
+- (void)toggleTeleport {
+    teleportEnabled = !teleportEnabled;
+    NSLog(@"TELEPORT: %@", teleportEnabled ? @"ON" : @"OFF");
 }
 
 @end
