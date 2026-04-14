@@ -31,7 +31,7 @@ static BOOL isFreeFire = NO;
 typedef struct { float x; float y; float z; } vec3_t;
 typedef struct { float x; float y; float z; float w; } quaternion_t;
 
-// ============ RESET FUNCTION (déclarée TOUT EN HAUT avant tout) ===
+// ============ RESET FUNCTION (tout en haut) ============
 static void resetGuestAccount() {
     NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
     [[NSUserDefaults standardUserDefaults] removePersistentDomainForName:bundleID];
@@ -170,7 +170,7 @@ static void StartGameLoop() {
     }];
 }
 
-// === BOUTON DRAGGABLE (100% TON CODE ORIGINAL) ===
+// === BOUTON DRAGGABLE (100% TON CODE ORIGINAL + fix toggle) ===
 @interface DraggableButton : UIButton
 @property (nonatomic, assign) BOOL isActive;
 @property (nonatomic, copy) void (^toggleBlock)(void);
@@ -202,6 +202,17 @@ static void StartGameLoop() {
 
 - (void)buttonTapped {
     if (self.toggleBlock) self.toggleBlock();
+    
+    // Toggle visuel
+    self.isActive = !self.isActive;
+    if (self.isActive) {
+        self.backgroundColor = [UIColor colorWithRed:0.2 green:0.8 blue:0.2 alpha:0.9];
+        self.layer.borderColor = [UIColor greenColor].CGColor;
+    } else {
+        self.backgroundColor = [UIColor colorWithRed:1.0 green:0.2 blue:0.2 alpha:0.85];
+        self.layer.borderColor = [UIColor whiteColor].CGColor;
+    }
+    
     [UIView animateWithDuration:0.1 animations:^{
         self.transform = CGAffineTransformMakeScale(0.95, 0.95);
     } completion:^(BOOL finished) {
@@ -215,17 +226,6 @@ static void StartGameLoop() {
     CGPoint translation = [gesture translationInView:self.superview];
     self.center = CGPointMake(self.center.x + translation.x, self.center.y + translation.y);
     [gesture setTranslation:CGPointZero inView:self.superview];
-}
-
-- (void)setActive:(BOOL)active {
-    _isActive = active;
-    if (active) {
-        self.backgroundColor = [UIColor colorWithRed:0.2 green:0.8 blue:0.2 alpha:0.9];
-        self.layer.borderColor = [UIColor greenColor].CGColor;
-    } else {
-        self.backgroundColor = [UIColor colorWithRed:1.0 green:0.2 blue:0.2 alpha:0.85];
-        self.layer.borderColor = [UIColor whiteColor].CGColor;
-    }
 }
 
 @end
@@ -310,13 +310,13 @@ void updateSpinbot() { spinbotEnabled = !spinbotEnabled; if (spinbotEnabled && a
 
 // === CRÉATION DE L'UI ===
 static void CreateUI() {
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 4 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
         NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
         isFreeFire = [bundleID containsString:@"garena"] || [bundleID containsString:@"freefire"];
         
         UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
         if (!root || !root.view) {
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 3 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 2 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
                 CreateUI();
             });
             return;
@@ -361,12 +361,12 @@ static void CreateUI() {
         [allButtons addObject:resetBtn];
         
         if (isFreeFire) StartGameLoop();
-        NSLog(@"✅👾 [XSNPOWWWWWW] MENU VISIBLE - Tous les boutons draggable + reset fixe");
+        NSLog(@"✅👾 [XSNPOWWWWWW] MENU VISIBLE sur Wallpaper - boutons fixés");
     });
 }
 
 %ctor {
-    NSLog(@"👾💻 [XSNPOWWWWWW] dylib chargé - version safe FF");
+    NSLog(@"👾💻 [XSNPOWWWWWW] dylib chargé");
     CreateUI();
 }
 
