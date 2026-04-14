@@ -1,13 +1,16 @@
 #import <UIKit/UIKit.h>
 #import <StoreKit/StoreKit.h>
 
-// ============ OFFSETS (remplace par TES valeurs) ============
-#define OFFSET_GET_LOCAL_PLAYER    0x00000000
-#define OFFSET_GET_PLAYERS_LIST    0x00000000
-#define OFFSET_GET_POSITION        0x00000000
-#define OFFSET_GET_TEAM            0x00000000
-#define OFFSET_GET_ROTATION        0x00000000
-#define OFFSET_SET_ROTATION        0x00000000
+// ============ TES OFFSETS ============
+#define OFFSET_GET_LOCAL_PLAYER    0x3585978   // get_MyPlayerInfo
+#define OFFSET_GET_PLAYERS_LIST    0x5D70930   // get_Players
+#define OFFSET_GET_POSITION        0x1185A30   // get_Position
+#define OFFSET_GET_TEAM            0x3AB244C   // get_TeamID
+#define OFFSET_GET_ROTATION        0x1185C20   // get_Rotation (Quaternion)
+#define OFFSET_SET_ROTATION        0x1185D1C   // set_Rotation (Quaternion)
+#define OFFSET_GET_HEALTH          0x6161388   // get_Health
+#define OFFSET_WORLD_TO_SCREEN     0x84E6A54   // WorldToScreenPoint
+#define OFFSET_CAMERA_GET_MAIN     0x84E7148   // Camera.get_main
 
 // ============ VARIABLES ============
 BOOL espBoxEnabled = NO;
@@ -20,8 +23,7 @@ BOOL spinbotEnabled = NO;
 static NSMutableArray *allButtons = nil;
 static UIButton *secretButton = nil;
 static BOOL buttonsHidden = NO;
-static NSTimer *aimbotTimer = nil;
-static NSTimer *spinbotTimer = nil;
+static NSTimer *gameTimer = nil;
 
 // ============ STRUCTURES ============
 typedef struct {
@@ -29,6 +31,13 @@ typedef struct {
     float y;
     float z;
 } vec3_t;
+
+typedef struct {
+    float x;
+    float y;
+    float z;
+    float w;
+} quaternion_t;
 
 // ============ FONCTIONS MÉMOIRE ============
 static void* GetLocalPlayer() {
@@ -51,82 +60,118 @@ static int GetTeam(void* player) {
     return func(player);
 }
 
-static float GetRotation(void* player) {
-    float (*func)(void*) = (float (*)(void*))OFFSET_GET_ROTATION;
+static int GetHealth(void* player) {
+    int (*func)(void*) = (int (*)(void*))OFFSET_GET_HEALTH;
     return func(player);
 }
 
-static void SetRotation(void* player, float rot) {
-    void (*func)(void*, float) = (void (*)(void*, float))OFFSET_SET_ROTATION;
+static quaternion_t GetRotationQuat(void* player) {
+    quaternion_t (*func)(void*) = (quaternion_t (*)(void*))OFFSET_GET_ROTATION;
+    return func(player);
+}
+
+static void SetRotationQuat(void* player, quaternion_t rot) {
+    void (*func)(void*, quaternion_t) = (void (*)(void*, quaternion_t))OFFSET_SET_ROTATION;
     func(player, rot);
 }
 
-// ============ AIMBOT ============
-static void UpdateAimbot() {
-    if (!aimbotEnabled) return;
-    
-    void* localPlayer = GetLocalPlayer();
-    if (!localPlayer) return;
-    
-    vec3_t localPos = GetPosition(localPlayer);
-    int localTeam = GetTeam(localPlayer);
-    
-    int playerCount = 0;
-    void** players = GetPlayersList(&playerCount);
-    if (!players) return;
-    
-    float closestAngle = 360.0f;
-    void* closestEnemy = nil;
-    float currentRot = GetRotation(localPlayer);
-    
-    for (int i = 0; i < playerCount; i++) {
-        void* player = players[i];
-        if (!player || player == localPlayer) continue;
+// Convertir Quaternion en angle Yaw (en degrés)
+static float QuaternionToYaw(quaternion_t q) {
+    float yaw = atan2(2.0f * (q.y * q.w + q.x * q.z), 1.0f - 2.0f * (q.y * q.y + q.x * q.x));
+    return yaw * 180.0f / M_PI;
+}
+
+// Convertir angle Yaw en Quaternion
+static quaternion_t YawToQuaternion(float yaw) {
+    quaternion_t q;
+    float rad = yaw * M_PI / 180.0f;
+    float halfRad = rad / 2.0f;
+    q.x = 0;
+    q.y = sin(halfRad);
+    q.z = 0;
+    q.w = cos(halfRad);
+    return q;
+}
+
+// ============ CAMERA & WORLD TO SCREEN ============
+static void* GetMainCamera() {
+    void* (*func)() = (void* (*)())OFFSET_CAMERA_GET_MAIN;
+    return func();
+}
+
+static vec3_t WorldToScreenPoint(vec3_t worldPos) {
+    vec3_t (*func)(void*, vec3_t) = (vec3_t (*)(void*, vec3_t))OFFSET_WORLD_TO_SCREEN;
+    void* camera = GetMainCamera();
+    if (!camera) return (vec3_t){0,0,0};
+    return func(camera, worldPos);
+}
+
+// ============ UPDATE GLOBAL ============
+static void UpdateGame() {
+    @autoreleasepool {
+        void* localPlayer = GetLocalPlayer();
+        if (!localPlayer) return;
         
-        int team = GetTeam(player);
-        if (team == localTeam) continue;
+        // SPINBOT
+        if (spinbotEnabled) {
+            quaternion_t rot = GetRotationQuat(localPlayer);
+            float yaw = QuaternionToYaw(rot);
+            yaw += 30.0f;
+            SetRotationQuat(localPlayer, YawToQuaternion(yaw));
+        }
         
-        vec3_t enemyPos = GetPosition(player);
-        float dx = enemyPos.x - localPos.x;
-        float dz = enemyPos.z - localPos.z;
-        float angle = atan2(dz, dx) * 180.0 / M_PI;
+        // AIMBOT
+        else if (aimbotEnabled) {
+            vec3_t localPos = GetPosition(localPlayer);
+            int localTeam = GetTeam(localPlayer);
+            quaternion_t localRot = GetRotationQuat(localPlayer);
+            float currentYaw = QuaternionToYaw(localRot);
+            
+            int playerCount = 0;
+            void** players = GetPlayersList(&playerCount);
+            if (!players) return;
+            
+            float closestAngle = 360.0f;
+            vec3_t closestEnemyPos = {0,0,0};
+            int found = 0;
+            
+            for (int i = 0; i < playerCount && i < 50; i++) {
+                void* player = players[i];
+                if (!player || player == localPlayer) continue;
+                if (GetTeam(player) == localTeam) continue;
+                
+                vec3_t enemyPos = GetPosition(player);
+                float dx = enemyPos.x - localPos.x;
+                float dz = enemyPos.z - localPos.z;
+                float angle = atan2(dz, dx) * 180.0f / M_PI;
+                float diff = fabs(angle - currentYaw);
+                
+                if (diff < closestAngle) {
+                    closestAngle = diff;
+                    closestEnemyPos = enemyPos;
+                    found = 1;
+                }
+            }
+            
+            if (found) {
+                float dx = closestEnemyPos.x - localPos.x;
+                float dz = closestEnemyPos.z - localPos.z;
+                float targetYaw = atan2(dz, dx) * 180.0f / M_PI;
+                SetRotationQuat(localPlayer, YawToQuaternion(targetYaw));
+            }
+        }
         
-        if (fabs(angle - currentRot) < closestAngle) {
-            closestAngle = fabs(angle - currentRot);
-            closestEnemy = player;
+        // ESP BOX (si activé)
+        if (espBoxEnabled || espLineEnabled || espDistanceEnabled || espHealthEnabled) {
+            // À implémenter avec WorldToScreenPoint
         }
     }
-    
-    if (closestEnemy) {
-        vec3_t enemyPos = GetPosition(closestEnemy);
-        float dx = enemyPos.x - localPos.x;
-        float dz = enemyPos.z - localPos.z;
-        float targetAngle = atan2(dz, dx) * 180.0 / M_PI;
-        SetRotation(localPlayer, targetAngle);
-    }
 }
 
-static void StartAimbotLoop() {
-    if (aimbotTimer) [aimbotTimer invalidate];
-    aimbotTimer = [NSTimer scheduledTimerWithTimeInterval:0.05 repeats:YES block:^(NSTimer *timer) {
-        UpdateAimbot();
-    }];
-}
-
-// ============ SPINBOT ============
-static void UpdateSpinbot() {
-    if (!spinbotEnabled) return;
-    void* localPlayer = GetLocalPlayer();
-    if (!localPlayer) return;
-    float currentRot = GetRotation(localPlayer);
-    currentRot += 30.0f;
-    SetRotation(localPlayer, currentRot);
-}
-
-static void StartSpinbotLoop() {
-    if (spinbotTimer) [spinbotTimer invalidate];
-    spinbotTimer = [NSTimer scheduledTimerWithTimeInterval:0.02 repeats:YES block:^(NSTimer *timer) {
-        UpdateSpinbot();
+static void StartGameLoop() {
+    if (gameTimer) [gameTimer invalidate];
+    gameTimer = [NSTimer scheduledTimerWithTimeInterval:0.05 repeats:YES block:^(NSTimer *timer) {
+        UpdateGame();
     }];
 }
 
@@ -161,10 +206,7 @@ static void StartSpinbotLoop() {
 }
 
 - (void)buttonTapped {
-    if (self.toggleBlock) {
-        self.toggleBlock();
-    }
-    // Animation de clic
+    if (self.toggleBlock) self.toggleBlock();
     [UIView animateWithDuration:0.1 animations:^{
         self.transform = CGAffineTransformMakeScale(0.95, 0.95);
     } completion:^(BOOL finished) {
@@ -222,33 +264,19 @@ static void StartSpinbotLoop() {
 
 - (void)toggleSecret {
     buttonsHidden = !buttonsHidden;
-    for (UIView *btn in allButtons) {
-        btn.hidden = buttonsHidden;
-    }
-    if (buttonsHidden) {
-        [self setTitle:@"🔐" forState:UIControlStateNormal];
-    } else {
-        [self setTitle:@"🔓" forState:UIControlStateNormal];
-    }
+    for (UIView *btn in allButtons) btn.hidden = buttonsHidden;
+    [self setTitle:buttonsHidden ? @"🔐" : @"🔓" forState:UIControlStateNormal];
 }
 
 @end
 
 // === ACTIONS ===
-void updateESPBox() { espBoxEnabled = !espBoxEnabled; NSLog(@"ESP BOX: %@", espBoxEnabled ? @"ON" : @"OFF"); }
-void updateESPLine() { espLineEnabled = !espLineEnabled; NSLog(@"ESP LINE: %@", espLineEnabled ? @"ON" : @"OFF"); }
-void updateESPDistance() { espDistanceEnabled = !espDistanceEnabled; NSLog(@"ESP DIST: %@", espDistanceEnabled ? @"ON" : @"OFF"); }
-void updateESPHealth() { espHealthEnabled = !espHealthEnabled; NSLog(@"ESP HEALTH: %@", espHealthEnabled ? @"ON" : @"OFF"); }
-void updateAimbot() { 
-    aimbotEnabled = !aimbotEnabled; 
-    if (aimbotEnabled) StartAimbotLoop();
-    NSLog(@"AIMBOT: %@", aimbotEnabled ? @"ON" : @"OFF");
-}
-void updateSpinbot() { 
-    spinbotEnabled = !spinbotEnabled; 
-    if (spinbotEnabled) StartSpinbotLoop(); else if (spinbotTimer) [spinbotTimer invalidate];
-    NSLog(@"SPINBOT: %@", spinbotEnabled ? @"ON" : @"OFF");
-}
+void updateESPBox() { espBoxEnabled = !espBoxEnabled; if (!gameTimer) StartGameLoop(); }
+void updateESPLine() { espLineEnabled = !espLineEnabled; }
+void updateESPDistance() { espDistanceEnabled = !espDistanceEnabled; }
+void updateESPHealth() { espHealthEnabled = !espHealthEnabled; }
+void updateAimbot() { aimbotEnabled = !aimbotEnabled; if (!gameTimer) StartGameLoop(); }
+void updateSpinbot() { spinbotEnabled = !spinbotEnabled; if (spinbotEnabled && aimbotEnabled) aimbotEnabled = NO; if (!gameTimer) StartGameLoop(); }
 
 // === CRÉATION DE L'UI ===
 static void CreateUI() {
@@ -260,46 +288,36 @@ static void CreateUI() {
         
         CGFloat screenW = [UIScreen mainScreen].bounds.size.width;
         CGFloat screenH = [UIScreen mainScreen].bounds.size.height;
-        CGFloat btnW = 100;
-        CGFloat btnH = 40;
+        CGFloat btnW = 100, btnH = 40;
         
-        // Petit texte XSNPMODZZZ
         UILabel *xsnLabel = [[UILabel alloc] initWithFrame:CGRectMake(10, 10, 120, 15)];
         xsnLabel.text = @"XSNPMODZZZ";
         xsnLabel.textColor = [UIColor colorWithRed:0.6 green:0.2 blue:1.0 alpha:0.7];
         xsnLabel.font = [UIFont systemFontOfSize:9];
         [root.view addSubview:xsnLabel];
         
-        // Bouton secret
         secretButton = [[SecretButton alloc] initWithFrame:CGRectMake(screenW - 50, 45, 40, 40)];
         [root.view addSubview:secretButton];
         
-        // BOUTONS
-        DraggableButton *btn1 = [[DraggableButton alloc] initWithFrame:CGRectMake(screenW/2 - btnW/2, 100, btnW, btnH) title:@"ESP BOX" block:^{ updateESPBox(); DraggableButton *b = (id)[allButtons firstObject]; [b setActive:espBoxEnabled]; }];
-        [root.view addSubview:btn1];
-        [allButtons addObject:btn1];
+        NSArray *titles = @[@"ESP BOX", @"ESP LINE", @"ESP DIST", @"ESP HEALTH", @"AIMBOT", @"SPINBOT"];
+        NSArray *selectors = @[^{ updateESPBox(); }, ^{ updateESPLine(); }, ^{ updateESPDistance(); }, ^{ updateESPHealth(); }, ^{ updateAimbot(); }, ^{ updateSpinbot(); }];
+        NSArray *positions = @[
+            [NSValue valueWithCGRect:CGRectMake(screenW/2 - btnW/2, 100, btnW, btnH)],
+            [NSValue valueWithCGRect:CGRectMake(20, 180, btnW, btnH)],
+            [NSValue valueWithCGRect:CGRectMake(screenW - btnW - 20, 180, btnW, btnH)],
+            [NSValue valueWithCGRect:CGRectMake(screenW/2 - btnW/2, 270, btnW, btnH)],
+            [NSValue valueWithCGRect:CGRectMake(20, screenH - 100, btnW, btnH)],
+            [NSValue valueWithCGRect:CGRectMake(screenW - btnW - 20, screenH - 100, btnW, btnH)]
+        ];
         
-        DraggableButton *btn2 = [[DraggableButton alloc] initWithFrame:CGRectMake(20, 180, btnW, btnH) title:@"ESP LINE" block:^{ updateESPLine(); DraggableButton *b = (id)[allButtons objectAtIndex:1]; [b setActive:espLineEnabled]; }];
-        [root.view addSubview:btn2];
-        [allButtons addObject:btn2];
+        for (int i = 0; i < 6; i++) {
+            DraggableButton *btn = [[DraggableButton alloc] initWithFrame:[positions[i] CGRectValue] title:titles[i] block:selectors[i]];
+            [root.view addSubview:btn];
+            [allButtons addObject:btn];
+        }
         
-        DraggableButton *btn3 = [[DraggableButton alloc] initWithFrame:CGRectMake(screenW - btnW - 20, 180, btnW, btnH) title:@"ESP DIST" block:^{ updateESPDistance(); DraggableButton *b = (id)[allButtons objectAtIndex:2]; [b setActive:espDistanceEnabled]; }];
-        [root.view addSubview:btn3];
-        [allButtons addObject:btn3];
-        
-        DraggableButton *btn4 = [[DraggableButton alloc] initWithFrame:CGRectMake(screenW/2 - btnW/2, 270, btnW, btnH) title:@"ESP HEALTH" block:^{ updateESPHealth(); DraggableButton *b = (id)[allButtons objectAtIndex:3]; [b setActive:espHealthEnabled]; }];
-        [root.view addSubview:btn4];
-        [allButtons addObject:btn4];
-        
-        DraggableButton *btn5 = [[DraggableButton alloc] initWithFrame:CGRectMake(20, screenH - 100, btnW, btnH) title:@"AIMBOT" block:^{ updateAimbot(); DraggableButton *b = (id)[allButtons objectAtIndex:4]; [b setActive:aimbotEnabled]; }];
-        [root.view addSubview:btn5];
-        [allButtons addObject:btn5];
-        
-        DraggableButton *btn6 = [[DraggableButton alloc] initWithFrame:CGRectMake(screenW - btnW - 20, screenH - 100, btnW, btnH) title:@"SPINBOT" block:^{ updateSpinbot(); DraggableButton *b = (id)[allButtons objectAtIndex:5]; [b setActive:spinbotEnabled]; }];
-        [root.view addSubview:btn6];
-        [allButtons addObject:btn6];
-        
-        NSLog(@"✅ UI créée");
+        StartGameLoop();
+        NSLog(@"✅ UI créée - 6 boutons");
     });
 }
 
@@ -310,7 +328,5 @@ static void CreateUI() {
 }
 
 %hook SKPaymentQueue
-- (void)addPayment:(SKPayment *)payment {
-    %orig;
-}
+- (void)addPayment:(SKPayment *)payment { %orig; }
 %end
