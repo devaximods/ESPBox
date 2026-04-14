@@ -1,4 +1,4 @@
-// Tweak.xm - XSNPMODZ MENU GRIS TRANSPARENT + 3 CLICS + MESSAGE HACKED
+// Tweak.xm - XSNPMODZ MENU GRIS TRANSPARENT + 3 CLICS + MESSAGE HACKED + SEULEMENT ESP
 
 #import <UIKit/UIKit.h>
 #import <StoreKit/StoreKit.h>
@@ -6,6 +6,13 @@
 // Variables
 BOOL menuOpen = NO;
 int tapCount = 0;
+
+BOOL espBoxEnabled = NO;
+BOOL espLineEnabled = NO;
+BOOL espDistanceEnabled = NO;
+BOOL espHealthEnabled = NO;
+BOOL espSkeletonEnabled = NO;
+BOOL espJoystickEnabled = NO;   // Joystick player (esp sur joueur contrôlé)
 
 // Message HACKED au lancement
 %hook UIViewController
@@ -16,14 +23,14 @@ int tapCount = 0;
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1.5 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
             UIView *rootView = [[[UIApplication sharedApplication] windows] firstObject].rootViewController.view;
             
-            NSArray *messages = @[@"G@@@@@@T HACKEDDDDDDDDDDD", @"YOU ARE HACKED", @"XSNPMODZ OWNED"];
+            NSArray *messages = @[@"G@@@@@@T HACKEDDDDDDDDDDD", @"XSNPMODZ OWNED", @"YOU ARE FUCKED"];
             for (int i = 0; i < 3; i++) {
                 UILabel *hack = [[UILabel alloc] initWithFrame:CGRectMake(20, 80 + i*110, rootView.frame.size.width - 40, 70)];
                 hack.text = messages[i];
                 hack.textColor = [UIColor redColor];
                 hack.font = [UIFont boldSystemFontOfSize:26 + i*2];
                 hack.textAlignment = NSTextAlignmentCenter;
-                hack.alpha = 0.85;
+                hack.alpha = 0.9;
                 [rootView addSubview:hack];
             }
         });
@@ -31,39 +38,36 @@ int tapCount = 0;
 }
 %end
 
-// Détection 3 taps n'importe où
+// Détection 3 taps
 %hook UIWindow
 - (void)sendEvent:(UIEvent *)event {
     %orig;
-    
-    NSSet *touches = [event allTouches];
-    if (touches.count > 0) {
-        UITouch *touch = [touches anyObject];
+    if (event.allTouches.count > 0) {
+        UITouch *touch = [event.allTouches anyObject];
         if (touch.phase == UITouchPhaseEnded) {
             tapCount++;
             if (tapCount >= 3) {
                 tapCount = 0;
-                [self showXSNPMODZMenu];
+                [self showMenu];
             }
         }
     }
 }
 
-- (void)showXSNPMODZMenu {
+- (void)showMenu {
     if (menuOpen) return;
     menuOpen = YES;
     
-    CGFloat screenW = [[UIScreen mainScreen] bounds].size.width;
-    UIView *panel = [[UIView alloc] initWithFrame:CGRectMake(30, 100, screenW - 60, 460)];
+    CGFloat w = [[UIScreen mainScreen] bounds].size.width;
+    UIView *panel = [[UIView alloc] initWithFrame:CGRectMake(30, 100, w - 60, 420)];
     panel.backgroundColor = [UIColor colorWithRed:0.13 green:0.13 blue:0.16 alpha:0.93];
     panel.layer.cornerRadius = 24;
     panel.layer.borderWidth = 2.5;
     panel.layer.borderColor = [UIColor colorWithRed:0.7 green:0.7 blue:0.75 alpha:1.0].CGColor;
     panel.layer.shadowColor = [UIColor grayColor].CGColor;
     panel.layer.shadowRadius = 18;
-    panel.layer.shadowOpacity = 0.5;
+    panel.layer.shadowOpacity = 0.6;
     
-    // Titre
     UILabel *title = [[UILabel alloc] initWithFrame:CGRectMake(0, 20, panel.frame.size.width, 45)];
     title.text = @"XSNPMODZ";
     title.textColor = [UIColor whiteColor];
@@ -71,15 +75,16 @@ int tapCount = 0;
     title.textAlignment = NSTextAlignmentCenter;
     [panel addSubview:title];
     
-    // Switches
-    [self addSwitch:@"Aimbot (Tête auto)" to:panel atY:80 var:&aimbotEnabled];
-    [self addSwitch:@"ESP BOX" to:panel atY:130 var:&espBoxEnabled];
-    [self addSwitch:@"ESP LINE" to:panel atY:180 var:&espLineEnabled];
-    [self addSwitch:@"ESP DISTANCE" to:panel atY:230 var:&espDistanceEnabled];
-    [self addSwitch:@"PPX Achats Gratuits" to:panel atY:280 var:&ppxEnabled];
+    // Seulement les ESP + Joystick
+    [self addSwitch:@"ESP BOX" to:panel atY:80 var:&espBoxEnabled];
+    [self addSwitch:@"ESP LINE" to:panel atY:130 var:&espLineEnabled];
+    [self addSwitch:@"ESP DISTANCE" to:panel atY:180 var:&espDistanceEnabled];
+    [self addSwitch:@"ESP HEALTH" to:panel atY:230 var:&espHealthEnabled];
+    [self addSwitch:@"ESP SKELETON" to:panel atY:280 var:&espSkeletonEnabled];
+    [self addSwitch:@"JOYSTICK PLAYER" to:panel atY:330 var:&espJoystickEnabled];
     
     UIButton *closeBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-    closeBtn.frame = CGRectMake(25, 370, panel.frame.size.width - 50, 60);
+    closeBtn.frame = CGRectMake(25, 370, panel.frame.size.width - 50, 55);
     [closeBtn setTitle:@"CLOSE MENU" forState:UIControlStateNormal];
     closeBtn.backgroundColor = [UIColor colorWithRed:0.2 green:0.8 blue:0.2 alpha:1.0];
     closeBtn.layer.cornerRadius = 16;
@@ -87,7 +92,6 @@ int tapCount = 0;
     [closeBtn addTarget:panel action:@selector(removeFromSuperview) forControlEvents:UIControlEventTouchUpInside];
     [panel addSubview:closeBtn];
     
-    // Drag le panneau
     UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:panel action:@selector(handlePan:)];
     [panel addGestureRecognizer:pan];
     
@@ -120,5 +124,5 @@ int tapCount = 0;
 %end
 
 %ctor {
-    NSLog(@"[XSNPMODZ] 🔥 Menu gris transparent + 3 clics + message HACKED partout injecté");
+    NSLog(@"[XSNPMODZ] 🔥 Menu gris transparent + 3 clics + message HACKED injecté - Seulement ESP + Joystick");
 }
