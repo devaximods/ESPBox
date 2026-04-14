@@ -14,7 +14,6 @@ BOOL espHealthEnabled = NO;
 BOOL espSkeletonEnabled = NO;
 BOOL espJoystickEnabled = NO;
 
-// Message HACKED au lancement
 %hook UIViewController
 - (void)viewDidAppear:(BOOL)animated {
     %orig;
