@@ -9,12 +9,10 @@ BOOL espHealthEnabled = NO;
 BOOL joyPlayerEnabled = NO;
 BOOL switchesHidden = NO;
 
-static NSMutableArray *allSwitches = nil;
-static NSMutableArray *allLabels = nil;
 static NSMutableArray *allContainers = nil;
 static UIButton *secretButton = nil;
 
-// === CLASSE CONTAINER DRAGGABLE (pour déplacer switch + label ensemble) ===
+// === CLASSE CONTAINER DRAGGABLE ===
 @interface DraggableContainer : UIView
 @property (nonatomic, strong) UISwitch *switchControl;
 @property (nonatomic, strong) UILabel *label;
@@ -28,7 +26,6 @@ static UIButton *secretButton = nil;
         self.backgroundColor = [UIColor clearColor];
         self.userInteractionEnabled = YES;
         
-        // Label au-dessus
         self.label = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, frame.size.width, 20)];
         self.label.text = title;
         self.label.textColor = [UIColor whiteColor];
@@ -36,7 +33,6 @@ static UIButton *secretButton = nil;
         self.label.textAlignment = NSTextAlignmentCenter;
         [self addSubview:self.label];
         
-        // Switch
         self.switchControl = [[UISwitch alloc] initWithFrame:CGRectMake(frame.size.width/2 - 25, 22, 50, 35)];
         self.switchControl.on = NO;
         self.switchControl.onTintColor = [UIColor purpleColor];
@@ -44,7 +40,6 @@ static UIButton *secretButton = nil;
         [self.switchControl addTarget:target action:action forControlEvents:UIControlEventValueChanged];
         [self addSubview:self.switchControl];
         
-        // Gesture pour déplacer
         UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePan:)];
         [self addGestureRecognizer:pan];
     }
@@ -61,6 +56,34 @@ static UIButton *secretButton = nil;
     [super setHidden:hidden];
     self.switchControl.hidden = hidden;
     self.label.hidden = hidden;
+}
+
+@end
+
+// === BOUTON SECRET DRAGGABLE ===
+@interface SecretDraggableButton : UIButton
+@end
+
+@implementation SecretDraggableButton
+
+- (instancetype)initWithFrame:(CGRect)frame {
+    self = [super initWithFrame:frame];
+    if (self) {
+        self.backgroundColor = [UIColor colorWithWhite:0.2 alpha:0.8];
+        self.layer.cornerRadius = frame.size.width / 2;
+        self.titleLabel.font = [UIFont boldSystemFontOfSize:18];
+        [self setTitle:@"🔓" forState:UIControlStateNormal];
+        
+        UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePan:)];
+        [self addGestureRecognizer:pan];
+    }
+    return self;
+}
+
+- (void)handlePan:(UIPanGestureRecognizer *)gesture {
+    CGPoint translation = [gesture translationInView:self.superview];
+    self.center = CGPointMake(self.center.x + translation.x, self.center.y + translation.y);
+    [gesture setTranslation:CGPointZero inView:self.superview];
 }
 
 @end
@@ -94,13 +117,11 @@ void toggleSecretMode() {
         container.hidden = switchesHidden;
     }
     if (switchesHidden) {
-        [secretButton setTitle:@"🔓" forState:UIControlStateNormal];
-        secretButton.backgroundColor = [UIColor colorWithRed:0.5 green:0 blue:0.5 alpha:0.8];
+        [secretButton setTitle:@"🔐" forState:UIControlStateNormal];
     } else {
-        [secretButton setTitle:@"🔒" forState:UIControlStateNormal];
-        secretButton.backgroundColor = [UIColor colorWithWhite:0.2 alpha:0.8];
+        [secretButton setTitle:@"🔓" forState:UIControlStateNormal];
     }
-    NSLog(@"SECRET MOD: %@", switchesHidden ? @"CACHÉ" : @"VISIBLE");
+    NSLog(@"SECRET MOD: %@", switchesHidden ? @"CACHÉ 🔐" : @"VISIBLE 🔓");
 }
 
 // === CRÉATION DES SWITCHES ===
@@ -114,16 +135,19 @@ static void CreateSwitches() {
         CGFloat containerW = 90;
         CGFloat containerH = 60;
         CGFloat startX = 20;
-        CGFloat startY = 80;
+        CGFloat startY = 60;
         CGFloat spacing = 15;
         
-        // Bouton SECRET MOD (en haut à droite)
-        secretButton = [UIButton buttonWithType:UIButtonTypeSystem];
-        secretButton.frame = CGRectMake([UIScreen mainScreen].bounds.size.width - 50, 45, 40, 40);
-        [secretButton setTitle:@"🔒" forState:UIControlStateNormal];
-        secretButton.titleLabel.font = [UIFont boldSystemFontOfSize:20];
-        secretButton.backgroundColor = [UIColor colorWithWhite:0.2 alpha:0.8];
-        secretButton.layer.cornerRadius = 20;
+        // Petit texte XSNPMODZZZ en haut à gauche (tout petit)
+        UILabel *xsnLabel = [[UILabel alloc] initWithFrame:CGRectMake(15, 10, 100, 15)];
+        xsnLabel.text = @"XSNPMODZZZ";
+        xsnLabel.textColor = [UIColor colorWithRed:0.6 green:0.2 blue:1.0 alpha:0.7];
+        xsnLabel.font = [UIFont systemFontOfSize:9];
+        xsnLabel.textAlignment = NSTextAlignmentLeft;
+        [root.view addSubview:xsnLabel];
+        
+        // Bouton SECRET MOD draggable (en haut à droite par défaut)
+        secretButton = [[SecretDraggableButton alloc] initWithFrame:CGRectMake([UIScreen mainScreen].bounds.size.width - 50, 40, 40, 40)];
         [secretButton addTarget:nil action:@selector(toggleSecretMode) forControlEvents:UIControlEventTouchUpInside];
         [root.view addSubview:secretButton];
         
@@ -154,14 +178,7 @@ static void CreateSwitches() {
         [root.view addSubview:c5];
         [allContainers addObject:c5];
         
-        // Petit texte XSNPMODZZZ en bas (optionnel)
-        UILabel *creditLabel = [[UILabel alloc] initWithFrame:CGRectMake(15, [UIScreen mainScreen].bounds.size.height - 30, 150, 20)];
-        creditLabel.text = @"XSNPMODZZZ";
-        creditLabel.textColor = [UIColor colorWithRed:0.5 green:0.2 blue:0.8 alpha:0.6];
-        creditLabel.font = [UIFont systemFontOfSize:9];
-        [root.view addSubview:creditLabel];
-        
-        NSLog(@"✅ 5 switches ESP déplaçables + bouton SECRET MOD");
+        NSLog(@"✅ 5 switches ESP déplaçables + bouton SECRET déplaçable");
     });
 }
 
