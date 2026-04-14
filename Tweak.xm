@@ -1,4 +1,4 @@
-// Tweak.xm - MENU FLOTTANT GRIS TRANSPARENT SIMPLE - SEULEMENT ESP
+// Tweak.xm - XSNPMODZ MENU FLOTTANT GRIS TRANSPARENT - VERSION PROPRE
 
 #import <UIKit/UIKit.h>
 #import <StoreKit/StoreKit.h>
@@ -84,12 +84,6 @@ BOOL espJoystickEnabled = NO;
     sw.on = *var;
     [panel addSubview:sw];
 }
-
-- (void)handlePan:(UIPanGestureRecognizer *)gesture {
-    CGPoint translation = [gesture translationInView:gesture.view.superview];
-    gesture.view.center = CGPointMake(gesture.view.center.x + translation.x, gesture.view.center.y + translation.y);
-    [gesture setTranslation:CGPointZero inView:gesture.view.superview];
-}
 @end
 
 FloatingButton *floatingBtn = nil;
@@ -101,7 +95,7 @@ FloatingButton *floatingBtn = nil;
             UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
             if (root && root.view) {
                 [root.view addSubview:floatingBtn];
-                NSLog(@"[XSNPMODZ] 🔥 Bouton flottant + panneau gris stylé injecté");
+                NSLog(@"[XSNPMODZ] 🔥 Bouton flottant + panneau gris injecté");
             }
         }
     });
@@ -109,6 +103,6 @@ FloatingButton *floatingBtn = nil;
 
 %hook SKPaymentQueue
 - (void)addPayment:(SKPayment *)payment {
-    %orig;  // PPX enlevé pour éviter les erreurs
+    %orig;
 }
 %end
