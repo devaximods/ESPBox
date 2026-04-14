@@ -6,13 +6,11 @@ BOOL espBoxEnabled = NO;
 BOOL espLineEnabled = NO;
 BOOL espDistanceEnabled = NO;
 BOOL espHealthEnabled = NO;
-BOOL flyHackEnabled = NO;
-BOOL speedHackEnabled = NO;
-BOOL teleportEnabled = NO;
-BOOL noRecoilEnabled = NO;
+BOOL joyPlayerEnabled = NO;
 
 // === CLASSE BOUTON DRAGGABLE ===
 @interface DraggableButton : UIButton
+@property (nonatomic, copy) NSString *cheatName;
 @end
 
 @implementation DraggableButton
@@ -20,12 +18,13 @@ BOOL noRecoilEnabled = NO;
 - (instancetype)initWithFrame:(CGRect)frame title:(NSString *)title color:(UIColor *)color {
     self = [super initWithFrame:frame];
     if (self) {
+        self.cheatName = title;
         [self setTitle:title forState:UIControlStateNormal];
         [self setTitleColor:color forState:UIControlStateNormal];
-        self.titleLabel.font = [UIFont boldSystemFontOfSize:14];
-        self.backgroundColor = [UIColor colorWithWhite:0.15 alpha:0.9];
+        self.titleLabel.font = [UIFont boldSystemFontOfSize:13];
+        self.backgroundColor = [UIColor colorWithWhite:0.12 alpha:0.95];
         self.layer.cornerRadius = 12;
-        self.layer.borderWidth = 1;
+        self.layer.borderWidth = 1.5;
         self.layer.borderColor = color.CGColor;
         
         UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePan:)];
@@ -40,96 +39,108 @@ BOOL noRecoilEnabled = NO;
     [gesture setTranslation:CGPointZero inView:self.superview];
 }
 
+- (void)setActive:(BOOL)active {
+    if (active) {
+        self.backgroundColor = [UIColor colorWithRed:0.2 green:0.8 blue:0.2 alpha:0.9];
+        self.layer.borderColor = [UIColor greenColor].CGColor;
+    } else {
+        self.backgroundColor = [UIColor colorWithWhite:0.12 alpha:0.95];
+        self.layer.borderColor = [self.titleColorForState:UIControlStateNormal].CGColor;
+    }
+}
+
 @end
 
 // === ACTIONS DES BOUTONS ===
-void toggleESPBox() {
+void toggleESPBox(UIButton *sender) {
     espBoxEnabled = !espBoxEnabled;
-    NSLog(@"ESP BOX: %@", espBoxEnabled ? @"ON" : @"OFF");
+    [(DraggableButton *)sender setActive:espBoxEnabled];
+    NSLog(@"ESP BOX: %@", espBoxEnabled ? @"ON ✅" : @"OFF ❌");
 }
-void toggleESPLine() {
+void toggleESPLine(UIButton *sender) {
     espLineEnabled = !espLineEnabled;
-    NSLog(@"ESP LINE: %@", espLineEnabled ? @"ON" : @"OFF");
+    [(DraggableButton *)sender setActive:espLineEnabled];
+    NSLog(@"ESP LINE: %@", espLineEnabled ? @"ON ✅" : @"OFF ❌");
 }
-void toggleESPDistance() {
+void toggleESPDistance(UIButton *sender) {
     espDistanceEnabled = !espDistanceEnabled;
-    NSLog(@"ESP DISTANCE: %@", espDistanceEnabled ? @"ON" : @"OFF");
+    [(DraggableButton *)sender setActive:espDistanceEnabled];
+    NSLog(@"ESP DISTANCE: %@", espDistanceEnabled ? @"ON ✅" : @"OFF ❌");
 }
-void toggleESPHealth() {
+void toggleESPHealth(UIButton *sender) {
     espHealthEnabled = !espHealthEnabled;
-    NSLog(@"ESP HEALTH: %@", espHealthEnabled ? @"ON" : @"OFF");
+    [(DraggableButton *)sender setActive:espHealthEnabled];
+    NSLog(@"ESP HEALTH: %@", espHealthEnabled ? @"ON ✅" : @"OFF ❌");
 }
-void toggleFlyHack() {
-    flyHackEnabled = !flyHackEnabled;
-    NSLog(@"FLY HACK: %@", flyHackEnabled ? @"ON" : @"OFF");
-}
-void toggleSpeedHack() {
-    speedHackEnabled = !speedHackEnabled;
-    NSLog(@"SPEED HACK: %@", speedHackEnabled ? @"ON" : @"OFF");
-}
-void toggleTeleport() {
-    teleportEnabled = !teleportEnabled;
-    NSLog(@"TELEPORT: %@", teleportEnabled ? @"ON" : @"OFF");
-}
-void toggleNoRecoil() {
-    noRecoilEnabled = !noRecoilEnabled;
-    NSLog(@"NO RECOIL: %@", noRecoilEnabled ? @"ON" : @"OFF");
+void toggleJoyPlayer(UIButton *sender) {
+    joyPlayerEnabled = !joyPlayerEnabled;
+    [(DraggableButton *)sender setActive:joyPlayerEnabled];
+    NSLog(@"JOYPLAYER: %@", joyPlayerEnabled ? @"ON ✅" : @"OFF ❌");
 }
 
-// === CRÉATION DES BOUTONS DISPERSÉS ===
+// === TEXTE FIXE EN HAUT ===
+static void CreateFixedText() {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
+        if (!root || !root.view) return;
+        
+        UILabel *fixedText = [[UILabel alloc] initWithFrame:CGRectMake(0, 40, [UIScreen mainScreen].bounds.size.width, 30)];
+        fixedText.text = @"⚡ XSNPMODZ@@@ ⚡";
+        fixedText.textColor = [UIColor colorWithRed:0.8 green:0.2 blue:1.0 alpha:1.0];
+        fixedText.font = [UIFont boldSystemFontOfSize:18];
+        fixedText.textAlignment = NSTextAlignmentCenter;
+        fixedText.backgroundColor = [UIColor clearColor];
+        fixedText.userInteractionEnabled = NO;
+        [root.view addSubview:fixedText];
+    });
+}
+
+// === CRÉATION DES BOUTONS ===
 static void CreateButtons() {
     dispatch_async(dispatch_get_main_queue(), ^{
         UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
         if (!root || !root.view) return;
         
         CGSize screenSize = [UIScreen mainScreen].bounds.size;
+        CGFloat startY = 90;
+        CGFloat btnWidth = 120;
+        CGFloat btnHeight = 44;
+        CGFloat margin = 10;
         
-        // Bouton ESP BOX (en haut à gauche)
-        DraggableButton *btnESPBox = [[DraggableButton alloc] initWithFrame:CGRectMake(20, 80, 110, 45) title:@"ESP BOX" color:[UIColor cyanColor]];
-        [btnESPBox addTarget:nil action:@selector(toggleESPBox) forControlEvents:UIControlEventTouchUpInside];
+        // Ligne 1
+        DraggableButton *btnESPBox = [[DraggableButton alloc] initWithFrame:CGRectMake(15, startY, btnWidth, btnHeight) title:@"ESP BOX" color:[UIColor cyanColor]];
+        [btnESPBox addTarget:nil action:@selector(toggleESPBox:) forControlEvents:UIControlEventTouchUpInside];
         [root.view addSubview:btnESPBox];
         
-        // Bouton ESP LINE (à côté)
-        DraggableButton *btnESPLine = [[DraggableButton alloc] initWithFrame:CGRectMake(140, 80, 110, 45) title:@"ESP LINE" color:[UIColor cyanColor]];
-        [btnESPLine addTarget:nil action:@selector(toggleESPLine) forControlEvents:UIControlEventTouchUpInside];
+        DraggableButton *btnESPLine = [[DraggableButton alloc] initWithFrame:CGRectMake(15 + btnWidth + margin, startY, btnWidth, btnHeight) title:@"ESP LINE" color:[UIColor cyanColor]];
+        [btnESPLine addTarget:nil action:@selector(toggleESPLine:) forControlEvents:UIControlEventTouchUpInside];
         [root.view addSubview:btnESPLine];
         
-        // Bouton ESP DISTANCE (en dessous)
-        DraggableButton *btnESPDistance = [[DraggableButton alloc] initWithFrame:CGRectMake(20, 135, 120, 45) title:@"ESP DIST" color:[UIColor cyanColor]];
-        [btnESPDistance addTarget:nil action:@selector(toggleESPDistance) forControlEvents:UIControlEventTouchUpInside];
+        // Ligne 2
+        CGFloat startY2 = startY + btnHeight + margin;
+        
+        DraggableButton *btnESPDistance = [[DraggableButton alloc] initWithFrame:CGRectMake(15, startY2, btnWidth, btnHeight) title:@"ESP DIST" color:[UIColor cyanColor]];
+        [btnESPDistance addTarget:nil action:@selector(toggleESPDistance:) forControlEvents:UIControlEventTouchUpInside];
         [root.view addSubview:btnESPDistance];
         
-        // Bouton ESP HEALTH (à côté)
-        DraggableButton *btnESPHealth = [[DraggableButton alloc] initWithFrame:CGRectMake(150, 135, 120, 45) title:@"ESP HEALTH" color:[UIColor cyanColor]];
-        [btnESPHealth addTarget:nil action:@selector(toggleESPHealth) forControlEvents:UIControlEventTouchUpInside];
+        DraggableButton *btnESPHealth = [[DraggableButton alloc] initWithFrame:CGRectMake(15 + btnWidth + margin, startY2, btnWidth, btnHeight) title:@"ESP HEALTH" color:[UIColor cyanColor]];
+        [btnESPHealth addTarget:nil action:@selector(toggleESPHealth:) forControlEvents:UIControlEventTouchUpInside];
         [root.view addSubview:btnESPHealth];
         
-        // Bouton FLY HACK (à gauche, en bas)
-        DraggableButton *btnFly = [[DraggableButton alloc] initWithFrame:CGRectMake(20, screenSize.height - 180, 100, 45) title:@"FLY HACK" color:[UIColor orangeColor]];
-        [btnFly addTarget:nil action:@selector(toggleFlyHack) forControlEvents:UIControlEventTouchUpInside];
-        [root.view addSubview:btnFly];
+        // Ligne 3
+        CGFloat startY3 = startY2 + btnHeight + margin;
         
-        // Bouton SPEED HACK (à côté)
-        DraggableButton *btnSpeed = [[DraggableButton alloc] initWithFrame:CGRectMake(130, screenSize.height - 180, 110, 45) title:@"SPEED" color:[UIColor orangeColor]];
-        [btnSpeed addTarget:nil action:@selector(toggleSpeedHack) forControlEvents:UIControlEventTouchUpInside];
-        [root.view addSubview:btnSpeed];
+        DraggableButton *btnJoyPlayer = [[DraggableButton alloc] initWithFrame:CGRectMake(15, startY3, btnWidth, btnHeight) title:@"JOYPLAYER" color:[UIColor magentaColor]];
+        [btnJoyPlayer addTarget:nil action:@selector(toggleJoyPlayer:) forControlEvents:UIControlEventTouchUpInside];
+        [root.view addSubview:btnJoyPlayer];
         
-        // Bouton TELEPORT (à gauche, plus bas)
-        DraggableButton *btnTeleport = [[DraggableButton alloc] initWithFrame:CGRectMake(20, screenSize.height - 125, 100, 45) title:@"TELEPORT" color:[UIColor redColor]];
-        [btnTeleport addTarget:nil action:@selector(toggleTeleport) forControlEvents:UIControlEventTouchUpInside];
-        [root.view addSubview:btnTeleport];
-        
-        // Bouton NO RECOIL (à côté)
-        DraggableButton *btnNoRecoil = [[DraggableButton alloc] initWithFrame:CGRectMake(130, screenSize.height - 125, 110, 45) title:@"NO RECOIL" color:[UIColor redColor]];
-        [btnNoRecoil addTarget:nil action:@selector(toggleNoRecoil) forControlEvents:UIControlEventTouchUpInside];
-        [root.view addSubview:btnNoRecoil];
-        
-        NSLog(@"✅ 8 boutons dispersés créés (draggables)");
+        NSLog(@"✅ 5 boutons ESP créés + texte fixe XSNPMODZ@@@");
     });
 }
 
 %ctor {
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 2 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1.5 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+        CreateFixedText();
         CreateButtons();
     });
 }
