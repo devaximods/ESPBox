@@ -31,7 +31,7 @@ static BOOL isFreeFire = NO;
 typedef struct { float x; float y; float z; } vec3_t;
 typedef struct { float x; float y; float z; float w; } quaternion_t;
 
-// ============ WRAPPERS SAFE ============
+// ============ WRAPPERS SAFE (encore plus protégé pour FF) ============
 static void* SafeGetLocalPlayer() {
     if (!isFreeFire) return NULL;
     static void* (*func)() = NULL;
@@ -90,9 +90,14 @@ static quaternion_t YawToQuaternion(float yaw) {
     return q;
 }
 
-// ============ UPDATE GAME ============
+// ============ UPDATE GAME (encore plus safe + delay interne) ============
 static void UpdateGame() {
     if (!isFreeFire) return;
+    
+    static int delayCounter = 0;
+    delayCounter++;
+    if (delayCounter < 40) return;  // attend ~2 secondes avant de toucher la mémoire
+    
     @autoreleasepool {
         void* localPlayer = SafeGetLocalPlayer();
         if (!localPlayer) return;
@@ -245,29 +250,23 @@ static void StartGameLoop() {
 
 @end
 
-// === NOUVEAU BOUTON RESET GUEST ===
+// === RESET GUEST (inchangé) ===
 void resetGuestAccount() {
     NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
-    
-    // 1. Supprime toutes les préférences
     [[NSUserDefaults standardUserDefaults] removePersistentDomainForName:bundleID];
     [[NSUserDefaults standardUserDefaults] synchronize];
     
-    // 2. Supprime les fichiers Documents (sauvegardes)
     NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
     [[NSFileManager defaultManager] removeItemAtPath:documentsPath error:nil];
     
-    // 3. Supprime le cache
     NSString *cachePath = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) firstObject];
     [[NSFileManager defaultManager] removeItemAtPath:cachePath error:nil];
     
-    NSLog(@"👾💻 [XSNPOWWWWWW] RESET GUEST effectué - toutes les données supprimées");
-    
-    // 4. Ferme l'app
+    NSLog(@"👾💻 [XSNPOWWWWWW] RESET GUEST effectué");
     exit(0);
 }
 
-// === ACTIONS (identiques + reset) ===
+// === ACTIONS ===
 void updateESPBox() { espBoxEnabled = !espBoxEnabled; if (!gameTimer) StartGameLoop(); }
 void updateESPLine() { espLineEnabled = !espLineEnabled; }
 void updateESPDistance() { espDistanceEnabled = !espDistanceEnabled; }
@@ -275,21 +274,15 @@ void updateESPHealth() { espHealthEnabled = !espHealthEnabled; }
 void updateAimbot() { aimbotEnabled = !aimbotEnabled; if (!gameTimer) StartGameLoop(); }
 void updateSpinbot() { spinbotEnabled = !spinbotEnabled; if (spinbotEnabled && aimbotEnabled) aimbotEnabled = NO; if (!gameTimer) StartGameLoop(); }
 
-// === CRÉATION DE L'UI (boutons fixés + label discret) ===
+// === CRÉATION DE L'UI (label discret + reset) ===
 static void CreateUI() {
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 4 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
         NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
         isFreeFire = [bundleID containsString:@"garena"] || [bundleID containsString:@"freefire"];
         
-        if (isFreeFire) {
-            NSLog(@"👾💻 [XSNPOWWWWWW] Free Fire détecté → hacks activés");
-        } else {
-            NSLog(@"👾💻 [XSNPOWWWWWW] App non-FreeFire → memory hacks désactivés");
-        }
-        
         UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
         if (!root || !root.view) {
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 2 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 3 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
                 CreateUI();
             });
             return;
@@ -301,7 +294,6 @@ static void CreateUI() {
         CGFloat screenH = [UIScreen mainScreen].bounds.size.height;
         CGFloat btnW = 100, btnH = 40;
         
-        // Label discret en haut (noir, plus petit, beau)
         UILabel *xsnLabel = [[UILabel alloc] initWithFrame:CGRectMake(15, 15, 280, 20)];
         xsnLabel.text = @"XSNPMODZCHEATFFGOTHACKED";
         xsnLabel.textColor = [UIColor blackColor];
@@ -329,7 +321,7 @@ static void CreateUI() {
             [allButtons addObject:btn];
         }
         
-        // Bouton RESET GUEST en bas centré
+        // RESET GUEST
         UIButton *resetButton = [UIButton buttonWithType:UIButtonTypeSystem];
         resetButton.frame = CGRectMake(screenW/2 - 80, screenH - 80, 160, 45);
         [resetButton setTitle:@"RESET GUEST" forState:UIControlStateNormal];
@@ -342,7 +334,7 @@ static void CreateUI() {
         [allButtons addObject:resetButton];
         
         if (isFreeFire) StartGameLoop();
-        NSLog(@"✅👾 [XSNPOWWWWWW] MENU VISIBLE - Boutons fixés + RESET GUEST ajouté");
+        NSLog(@"✅👾 [XSNPOWWWWWW] MENU VISIBLE sur Free Fire - version anti-crash");
     });
 }
 
@@ -351,7 +343,7 @@ void resetGuestAction() {
 }
 
 %ctor {
-    NSLog(@"👾💻 [XSNPOWWWWWW] dylib chargé");
+    NSLog(@"👾💻 [XSNPOWWWWWW] dylib chargé - version safe pour FF");
     CreateUI();
 }
 
