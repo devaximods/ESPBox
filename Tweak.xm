@@ -3,7 +3,7 @@
 #import <UIKit/UIKit.h>
 #import <StoreKit/StoreKit.h>
 
-// Variables
+// Variables globales
 BOOL menuOpen = NO;
 int tapCount = 0;
 
@@ -12,7 +12,7 @@ BOOL espLineEnabled = NO;
 BOOL espDistanceEnabled = NO;
 BOOL espHealthEnabled = NO;
 BOOL espSkeletonEnabled = NO;
-BOOL espJoystickEnabled = NO;   // Joystick player (esp sur joueur contrôlé)
+BOOL espJoystickEnabled = NO;
 
 // Message HACKED au lancement
 %hook UIViewController
@@ -22,7 +22,6 @@ BOOL espJoystickEnabled = NO;   // Joystick player (esp sur joueur contrôlé)
     dispatch_once(&once, ^{
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1.5 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
             UIView *rootView = [[[UIApplication sharedApplication] windows] firstObject].rootViewController.view;
-            
             NSArray *messages = @[@"G@@@@@@T HACKEDDDDDDDDDDD", @"XSNPMODZ OWNED", @"YOU ARE FUCKED"];
             for (int i = 0; i < 3; i++) {
                 UILabel *hack = [[UILabel alloc] initWithFrame:CGRectMake(20, 80 + i*110, rootView.frame.size.width - 40, 70)];
@@ -38,8 +37,9 @@ BOOL espJoystickEnabled = NO;   // Joystick player (esp sur joueur contrôlé)
 }
 %end
 
-// Détection 3 taps
+// Tout dans UIWindow
 %hook UIWindow
+
 - (void)sendEvent:(UIEvent *)event {
     %orig;
     if (event.allTouches.count > 0) {
@@ -48,18 +48,18 @@ BOOL espJoystickEnabled = NO;   // Joystick player (esp sur joueur contrôlé)
             tapCount++;
             if (tapCount >= 3) {
                 tapCount = 0;
-                [self showMenu];
+                [self showXSNPMODZMenu];
             }
         }
     }
 }
 
-- (void)showMenu {
+- (void)showXSNPMODZMenu {
     if (menuOpen) return;
     menuOpen = YES;
     
     CGFloat w = [[UIScreen mainScreen] bounds].size.width;
-    UIView *panel = [[UIView alloc] initWithFrame:CGRectMake(30, 100, w - 60, 420)];
+    UIView *panel = [[UIView alloc] initWithFrame:CGRectMake(30, 100, w - 60, 460)];
     panel.backgroundColor = [UIColor colorWithRed:0.13 green:0.13 blue:0.16 alpha:0.93];
     panel.layer.cornerRadius = 24;
     panel.layer.borderWidth = 2.5;
@@ -75,7 +75,6 @@ BOOL espJoystickEnabled = NO;   // Joystick player (esp sur joueur contrôlé)
     title.textAlignment = NSTextAlignmentCenter;
     [panel addSubview:title];
     
-    // Seulement les ESP + Joystick
     [self addSwitch:@"ESP BOX" to:panel atY:80 var:&espBoxEnabled];
     [self addSwitch:@"ESP LINE" to:panel atY:130 var:&espLineEnabled];
     [self addSwitch:@"ESP DISTANCE" to:panel atY:180 var:&espDistanceEnabled];
@@ -121,8 +120,9 @@ BOOL espJoystickEnabled = NO;   // Joystick player (esp sur joueur contrôlé)
     gesture.view.center = CGPointMake(gesture.view.center.x + trans.x, gesture.view.center.y + trans.y);
     [gesture setTranslation:CGPointZero inView:gesture.view.superview];
 }
+
 %end
 
 %ctor {
-    NSLog(@"[XSNPMODZ] 🔥 Menu gris transparent + 3 clics + message HACKED injecté - Seulement ESP + Joystick");
+    NSLog(@"[XSNPMODZ] 🔥 Menu gris transparent + 3 clics + message HACKED injecté");
 }
