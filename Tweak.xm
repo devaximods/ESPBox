@@ -12,7 +12,7 @@
 #define OFFSET_WORLD_TO_SCREEN     0x84E6A54
 #define OFFSET_CAMERA_GET_MAIN     0x84E7148
 
-// ============ VARIABLES (boutonsHidden maintenant __unused pour build) ============
+// ============ VARIABLES ============
 BOOL espBoxEnabled = NO;
 BOOL espLineEnabled = NO;
 BOOL espDistanceEnabled = NO;
@@ -22,10 +22,10 @@ BOOL spinbotEnabled = NO;
 
 static NSMutableArray *allButtons = nil;
 static UIButton *secretButton = nil;
-static __unused BOOL buttonsHidden = NO;   // <-- FIX ICI (le reste inchangé)
+static __unused BOOL buttonsHidden = NO;
 static NSTimer *gameTimer = nil;
 
-// ============ STRUCTURES (identiques) ============
+// ============ STRUCTURES ============
 typedef struct {
     float x; float y; float z;
 } vec3_t;
@@ -34,7 +34,7 @@ typedef struct {
     float x; float y; float z; float w;
 } quaternion_t;
 
-// ============ WRAPPERS SAFE (pour éviter crash) ============
+// ============ WRAPPERS SAFE ============
 static void* SafeGetLocalPlayer() {
     static void* (*func)() = NULL;
     if (!func) func = (void* (*)())OFFSET_GET_LOCAL_PLAYER;
@@ -84,7 +84,7 @@ static quaternion_t YawToQuaternion(float yaw) {
     return q;
 }
 
-// ============ UPDATE GAME (protégé) ============
+// ============ UPDATE GAME ============
 static void UpdateGame() {
     @autoreleasepool {
         void* localPlayer = SafeGetLocalPlayer();
@@ -146,7 +146,7 @@ static void StartGameLoop() {
     }];
 }
 
-// === BOUTON DRAGGABLE (100% TON CODE ORIGINAL - AUCUNE MODIF) ===
+// === BOUTON DRAGGABLE (100% TON CODE ORIGINAL) ===
 @interface DraggableButton : UIButton
 @property (nonatomic, assign) BOOL isActive;
 @property (nonatomic, copy) void (^toggleBlock)(void);
@@ -206,7 +206,7 @@ static void StartGameLoop() {
 
 @end
 
-// === BOUTON SECRET (100% TON CODE ORIGINAL - AUCUNE MODIF) ===
+// === BOUTON SECRET (100% TON CODE ORIGINAL) ===
 @interface SecretButton : UIButton
 @end
 
@@ -293,7 +293,7 @@ static void CreateUI() {
         }
         
         StartGameLoop();
-        NSLog(@"✅👾 UI créée avec delay safe - boutons 100% identiques à l'original");
+        NSLog(@"✅👾 UI créée avec delay safe - boutons 100%% identiques à l'original");  // <-- FIX ICI (%%)
     });
 }
 
