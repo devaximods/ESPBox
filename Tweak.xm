@@ -32,40 +32,34 @@ static BOOL cheatsEnabled = NO;
 typedef struct { float x; float y; float z; } vec3_t;
 typedef struct { float x; float y; float z; float w; } quaternion_t;
 
-// ============ RESET GUEST (fix complet) ============
+// ============ RESET GUEST (version max) ============
 static void resetGuestAccount() {
-    NSLog(@"👾💻 [XSNPOWWWWWW] RESET GUEST démarré...");
+    NSLog(@"👾💻 [XSNPOWWWWWW] RESET GUEST démarré - suppression maximale");
     
-    // 1. Supprime toutes les préférences de l'app
     NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
     [[NSUserDefaults standardUserDefaults] removePersistentDomainForName:bundleID];
     [[NSUserDefaults standardUserDefaults] synchronize];
     
-    // 2. Supprime le dossier Documents (sauvegardes principales de Free Fire)
     NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
-    if (documentsPath) {
-        [[NSFileManager defaultManager] removeItemAtPath:documentsPath error:nil];
-    }
+    if (documentsPath) [[NSFileManager defaultManager] removeItemAtPath:documentsPath error:nil];
     
-    // 3. Supprime le dossier Library (préférences + données supplémentaires)
     NSString *libraryPath = [NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES) firstObject];
-    if (libraryPath) {
-        [[NSFileManager defaultManager] removeItemAtPath:libraryPath error:nil];
-    }
+    if (libraryPath) [[NSFileManager defaultManager] removeItemAtPath:libraryPath error:nil];
     
-    // 4. Supprime le cache
     NSString *cachePath = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) firstObject];
-    if (cachePath) {
-        [[NSFileManager defaultManager] removeItemAtPath:cachePath error:nil];
+    if (cachePath) [[NSFileManager defaultManager] removeItemAtPath:cachePath error:nil];
+    
+    // Suppression Garena/Free Fire spécifique
+    NSString *garenaPath = [documentsPath stringByAppendingPathComponent:@"Garena"];
+    if ([[NSFileManager defaultManager] fileExistsAtPath:garenaPath]) {
+        [[NSFileManager defaultManager] removeItemAtPath:garenaPath error:nil];
     }
     
-    NSLog(@"👾💻 [XSNPOWWWWWW] RESET GUEST terminé - toutes les données invité supprimées");
-    
-    // 5. Ferme l'app pour forcer le reset complet
+    NSLog(@"👾💻 [XSNPOWWWWWW] RESET GUEST terminé");
     exit(0);
 }
 
-// ============ WRAPPERS SAFE (encore plus prudent) ============
+// ============ WRAPPERS SAFE ============
 static void* SafeGetLocalPlayer() {
     if (!isFreeFire || !cheatsEnabled) return NULL;
     static void* (*func)() = NULL;
@@ -124,12 +118,12 @@ static quaternion_t YawToQuaternion(float yaw) {
     return q;
 }
 
-// ============ UPDATE GAME ============
+// ============ UPDATE GAME (delay encore plus long) ============
 static void UpdateGame() {
     if (!isFreeFire || !cheatsEnabled) return;
     static int delayCounter = 0;
     delayCounter++;
-    if (delayCounter < 80) return;   // encore plus de délai pour éviter crash
+    if (delayCounter < 120) return;   // ~6 secondes de délai avant de toucher la mémoire
     
     @autoreleasepool {
         void* localPlayer = SafeGetLocalPlayer();
@@ -344,7 +338,7 @@ void updateSpinbot() { spinbotEnabled = !spinbotEnabled; if (spinbotEnabled && a
 
 // === CRÉATION DE L'UI ===
 static void CreateUI() {
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 6 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
         NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
         isFreeFire = [bundleID containsString:@"garena"] || [bundleID containsString:@"freefire"];
         
