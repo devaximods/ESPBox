@@ -26,12 +26,13 @@ static __unused BOOL buttonsHidden = NO;
 static NSTimer *gameTimer = nil;
 
 static BOOL isFreeFire = NO;
+static BOOL cheatsEnabled = NO;   // <--- NOUVEAU : tout est désactivé au début
 
 // ============ STRUCTURES ============
 typedef struct { float x; float y; float z; } vec3_t;
 typedef struct { float x; float y; float z; float w; } quaternion_t;
 
-// ============ RESET FUNCTION (tout en haut) ============
+// ============ RESET FUNCTION ============
 static void resetGuestAccount() {
     NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
     [[NSUserDefaults standardUserDefaults] removePersistentDomainForName:bundleID];
@@ -49,42 +50,42 @@ static void resetGuestAccount() {
 
 // ============ WRAPPERS SAFE ============
 static void* SafeGetLocalPlayer() {
-    if (!isFreeFire) return NULL;
+    if (!isFreeFire || !cheatsEnabled) return NULL;
     static void* (*func)() = NULL;
     if (!func) func = (void* (*)())OFFSET_GET_LOCAL_PLAYER;
     return func ? func() : NULL;
 }
 
 static void** SafeGetPlayersList(int *count) {
-    if (!isFreeFire) return NULL;
+    if (!isFreeFire || !cheatsEnabled) return NULL;
     static void** (*func)(int*) = NULL;
     if (!func) func = (void** (*)(int*))OFFSET_GET_PLAYERS_LIST;
     return func ? func(count) : NULL;
 }
 
 static vec3_t SafeGetPosition(void* player) {
-    if (!isFreeFire || !player) return (vec3_t){0,0,0};
+    if (!isFreeFire || !cheatsEnabled || !player) return (vec3_t){0,0,0};
     static vec3_t (*func)(void*) = NULL;
     if (!func) func = (vec3_t (*)(void*))OFFSET_GET_POSITION;
     return func ? func(player) : (vec3_t){0,0,0};
 }
 
 static int SafeGetTeam(void* player) {
-    if (!isFreeFire || !player) return 0;
+    if (!isFreeFire || !cheatsEnabled || !player) return 0;
     static int (*func)(void*) = NULL;
     if (!func) func = (int (*)(void*))OFFSET_GET_TEAM;
     return func ? func(player) : 0;
 }
 
 static quaternion_t SafeGetRotationQuat(void* player) {
-    if (!isFreeFire || !player) return (quaternion_t){0,0,0,1};
+    if (!isFreeFire || !cheatsEnabled || !player) return (quaternion_t){0,0,0,1};
     static quaternion_t (*func)(void*) = NULL;
     if (!func) func = (quaternion_t (*)(void*))OFFSET_GET_ROTATION;
     return func ? func(player) : (quaternion_t){0,0,0,1};
 }
 
 static void SafeSetRotationQuat(void* player, quaternion_t rot) {
-    if (!isFreeFire || !player) return;
+    if (!isFreeFire || !cheatsEnabled || !player) return;
     static void (*func)(void*, quaternion_t) = NULL;
     if (!func) func = (void (*)(void*, quaternion_t))OFFSET_SET_ROTATION;
     if (func) func(player, rot);
@@ -108,10 +109,10 @@ static quaternion_t YawToQuaternion(float yaw) {
 
 // ============ UPDATE GAME ============
 static void UpdateGame() {
-    if (!isFreeFire) return;
+    if (!isFreeFire || !cheatsEnabled) return;
     static int delayCounter = 0;
     delayCounter++;
-    if (delayCounter < 40) return;
+    if (delayCounter < 60) return;   // attend ~3 secondes avant de toucher la mémoire
     
     @autoreleasepool {
         void* localPlayer = SafeGetLocalPlayer();
@@ -170,7 +171,7 @@ static void StartGameLoop() {
     }];
 }
 
-// === BOUTON DRAGGABLE (100% TON CODE ORIGINAL + fix toggle) ===
+// === BOUTON DRAGGABLE (100% TON CODE ORIGINAL) ===
 @interface DraggableButton : UIButton
 @property (nonatomic, assign) BOOL isActive;
 @property (nonatomic, copy) void (^toggleBlock)(void);
@@ -203,7 +204,6 @@ static void StartGameLoop() {
 - (void)buttonTapped {
     if (self.toggleBlock) self.toggleBlock();
     
-    // Toggle visuel
     self.isActive = !self.isActive;
     if (self.isActive) {
         self.backgroundColor = [UIColor colorWithRed:0.2 green:0.8 blue:0.2 alpha:0.9];
@@ -230,7 +230,7 @@ static void StartGameLoop() {
 
 @end
 
-// === BOUTON SECRET (100% TON CODE ORIGINAL) ===
+// === BOUTON SECRET (maintenant = "ACTIVATE ALL CHEATS") ===
 @interface SecretButton : UIButton
 @end
 
@@ -239,9 +239,9 @@ static void StartGameLoop() {
 - (instancetype)initWithFrame:(CGRect)frame {
     self = [super initWithFrame:frame];
     if (self) {
-        self.backgroundColor = [UIColor colorWithWhite:0.2 alpha:0.8];
+        self.backgroundColor = [UIColor colorWithRed:0.0 green:0.6 blue:0.0 alpha:0.85];
         self.layer.cornerRadius = frame.size.width / 2;
-        self.titleLabel.font = [UIFont boldSystemFontOfSize:18];
+        self.titleLabel.font = [UIFont boldSystemFontOfSize:22];
         [self setTitle:@"🔓" forState:UIControlStateNormal];
         [self addTarget:self action:@selector(toggleSecret) forControlEvents:UIControlEventTouchUpInside];
         
@@ -258,9 +258,24 @@ static void StartGameLoop() {
 }
 
 - (void)toggleSecret {
-    buttonsHidden = !buttonsHidden;
-    for (UIView *btn in allButtons) btn.hidden = buttonsHidden;
-    [self setTitle:buttonsHidden ? @"🔐" : @"🔓" forState:UIControlStateNormal];
+    cheatsEnabled = !cheatsEnabled;
+    
+    if (cheatsEnabled) {
+        [self setTitle:@"🔓 ON" forState:UIControlStateNormal];
+        self.backgroundColor = [UIColor colorWithRed:0.0 green:0.8 blue:0.0 alpha:0.9];
+        if (!gameTimer) StartGameLoop();
+        NSLog(@"👾💻 [XSNPOWWWWWW] TOUS LES CHEATS ACTIVÉS - tu es dans la game, tout marche");
+    } else {
+        [self setTitle:@"🔒 OFF" forState:UIControlStateNormal];
+        self.backgroundColor = [UIColor colorWithRed:0.0 green:0.6 blue:0.0 alpha:0.85];
+        NSLog(@"👾💻 [XSNPOWWWWWW] Cheats désactivés");
+    }
+    
+    // Cache ou montre les boutons selon l'état
+    buttonsHidden = !cheatsEnabled;
+    for (UIView *btn in allButtons) {
+        if (btn != secretButton) btn.hidden = buttonsHidden;
+    }
 }
 
 @end
@@ -300,7 +315,7 @@ static void StartGameLoop() {
 
 @end
 
-// === ACTIONS ===
+// === ACTIONS (identiques) ===
 void updateESPBox() { espBoxEnabled = !espBoxEnabled; if (!gameTimer) StartGameLoop(); }
 void updateESPLine() { espLineEnabled = !espLineEnabled; }
 void updateESPDistance() { espDistanceEnabled = !espDistanceEnabled; }
@@ -310,13 +325,13 @@ void updateSpinbot() { spinbotEnabled = !spinbotEnabled; if (spinbotEnabled && a
 
 // === CRÉATION DE L'UI ===
 static void CreateUI() {
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 4 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
         NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
         isFreeFire = [bundleID containsString:@"garena"] || [bundleID containsString:@"freefire"];
         
         UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
         if (!root || !root.view) {
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 2 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 3 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
                 CreateUI();
             });
             return;
@@ -328,29 +343,31 @@ static void CreateUI() {
         CGFloat screenH = [UIScreen mainScreen].bounds.size.height;
         CGFloat btnW = 100, btnH = 40;
         
-        UILabel *xsnLabel = [[UILabel alloc] initWithFrame:CGRectMake(15, 15, 280, 20)];
+        UILabel *xsnLabel = [[UILabel alloc] initWithFrame:CGRectMake(15, 15, 280, 20));
         xsnLabel.text = @"XSNPMODZCHEATFFGOTHACKED";
         xsnLabel.textColor = [UIColor blackColor];
         xsnLabel.font = [UIFont systemFontOfSize:11 weight:UIFontWeightLight];
         xsnLabel.alpha = 0.75;
         [root.view addSubview:xsnLabel];
         
-        secretButton = [[SecretButton alloc] initWithFrame:CGRectMake(screenW - 60, 45, 50, 50)];
+        // Secret button = bouton principal "ACTIVATE ALL"
+        secretButton = [[SecretButton alloc] initWithFrame:CGRectMake(screenW - 65, 45, 55, 55)];
         [root.view addSubview:secretButton];
         
         NSArray *titles = @[@"ESP BOX", @"ESP LINE", @"ESP DIST", @"ESP HEALTH", @"AIMBOT", @"SPINBOT"];
         NSArray *selectors = @[^{ updateESPBox(); }, ^{ updateESPLine(); }, ^{ updateESPDistance(); }, ^{ updateESPHealth(); }, ^{ updateAimbot(); }, ^{ updateSpinbot(); }];
         NSArray *positions = @[
-            [NSValue valueWithCGRect:CGRectMake(screenW/2 - btnW/2, 120, btnW, btnH)],
-            [NSValue valueWithCGRect:CGRectMake(20, 200, btnW, btnH)],
-            [NSValue valueWithCGRect:CGRectMake(screenW - btnW - 20, 200, btnW, btnH)],
-            [NSValue valueWithCGRect:CGRectMake(screenW/2 - btnW/2, 280, btnW, btnH)],
-            [NSValue valueWithCGRect:CGRectMake(20, screenH - 170, btnW, btnH)],
-            [NSValue valueWithCGRect:CGRectMake(screenW - btnW - 20, screenH - 170, btnW, btnH)]
+            [NSValue valueWithCGRect:CGRectMake(screenW/2 - btnW/2, 130, btnW, btnH)],
+            [NSValue valueWithCGRect:CGRectMake(25, 200, btnW, btnH)],
+            [NSValue valueWithCGRect:CGRectMake(screenW - btnW - 25, 200, btnW, btnH)],
+            [NSValue valueWithCGRect:CGRectMake(screenW/2 - btnW/2, 270, btnW, btnH)],
+            [NSValue valueWithCGRect:CGRectMake(25, screenH - 170, btnW, btnH)],
+            [NSValue valueWithCGRect:CGRectMake(screenW - btnW - 25, screenH - 170, btnW, btnH)]
         ];
         
         for (int i = 0; i < 6; i++) {
             DraggableButton *btn = [[DraggableButton alloc] initWithFrame:[positions[i] CGRectValue] title:titles[i] block:selectors[i]];
+            btn.hidden = YES;   // tout caché au début
             [root.view addSubview:btn];
             [allButtons addObject:btn];
         }
@@ -360,13 +377,12 @@ static void CreateUI() {
         [root.view addSubview:resetBtn];
         [allButtons addObject:resetBtn];
         
-        if (isFreeFire) StartGameLoop();
-        NSLog(@"✅👾 [XSNPOWWWWWW] MENU VISIBLE sur Wallpaper - boutons fixés");
+        NSLog(@"✅👾 [XSNPOWWWWWW] MENU chargé - Appuie sur le gros 🔓 pour activer tous les cheats quand tu es en game");
     });
 }
 
 %ctor {
-    NSLog(@"👾💻 [XSNPOWWWWWW] dylib chargé");
+    NSLog(@"👾💻 [XSNPOWWWWWW] dylib chargé - mode safe (cheats OFF au début)");
     CreateUI();
 }
 
