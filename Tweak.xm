@@ -11,29 +11,59 @@ BOOL switchesHidden = NO;
 
 static NSMutableArray *allSwitches = nil;
 static NSMutableArray *allLabels = nil;
-static UILabel *secretLabel = nil;
+static NSMutableArray *allContainers = nil;
+static UIButton *secretButton = nil;
 
-// === FONCTION POUR CRÉER UN SWITCH AVEC LABEL ===
-static void AddSwitch(UIView *parent, NSString *title, CGFloat x, CGFloat y, BOOL *var, SEL action) {
-    // Label au-dessus du switch
-    UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(x, y, 120, 20)];
-    label.text = title;
-    label.textColor = [UIColor whiteColor];
-    label.font = [UIFont boldSystemFontOfSize:11];
-    label.textAlignment = NSTextAlignmentCenter;
-    [parent addSubview:label];
-    [allLabels addObject:label];
-    
-    // Switch ON/OFF
-    UISwitch *sw = [[UISwitch alloc] initWithFrame:CGRectMake(x + 10, y + 22, 100, 35)];
-    sw.on = *var;
-    sw.onTintColor = [UIColor purpleColor];  // ON = violet
-    sw.tintColor = [UIColor redColor];       // OFF = rouge
-    sw.tag = (NSInteger)var;
-    [sw addTarget:nil action:action forControlEvents:UIControlEventValueChanged];
-    [parent addSubview:sw];
-    [allSwitches addObject:sw];
+// === CLASSE CONTAINER DRAGGABLE (pour déplacer switch + label ensemble) ===
+@interface DraggableContainer : UIView
+@property (nonatomic, strong) UISwitch *switchControl;
+@property (nonatomic, strong) UILabel *label;
+@end
+
+@implementation DraggableContainer
+
+- (instancetype)initWithFrame:(CGRect)frame title:(NSString *)title action:(SEL)action target:(id)target {
+    self = [super initWithFrame:frame];
+    if (self) {
+        self.backgroundColor = [UIColor clearColor];
+        self.userInteractionEnabled = YES;
+        
+        // Label au-dessus
+        self.label = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, frame.size.width, 20)];
+        self.label.text = title;
+        self.label.textColor = [UIColor whiteColor];
+        self.label.font = [UIFont boldSystemFontOfSize:11];
+        self.label.textAlignment = NSTextAlignmentCenter;
+        [self addSubview:self.label];
+        
+        // Switch
+        self.switchControl = [[UISwitch alloc] initWithFrame:CGRectMake(frame.size.width/2 - 25, 22, 50, 35)];
+        self.switchControl.on = NO;
+        self.switchControl.onTintColor = [UIColor purpleColor];
+        self.switchControl.tintColor = [UIColor redColor];
+        [self.switchControl addTarget:target action:action forControlEvents:UIControlEventValueChanged];
+        [self addSubview:self.switchControl];
+        
+        // Gesture pour déplacer
+        UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePan:)];
+        [self addGestureRecognizer:pan];
+    }
+    return self;
 }
+
+- (void)handlePan:(UIPanGestureRecognizer *)gesture {
+    CGPoint translation = [gesture translationInView:self.superview];
+    self.center = CGPointMake(self.center.x + translation.x, self.center.y + translation.y);
+    [gesture setTranslation:CGPointZero inView:self.superview];
+}
+
+- (void)setHidden:(BOOL)hidden {
+    [super setHidden:hidden];
+    self.switchControl.hidden = hidden;
+    self.label.hidden = hidden;
+}
+
+@end
 
 // === ACTIONS DES SWITCHES ===
 void switchESPBox(UISwitch *sender) {
@@ -57,69 +87,81 @@ void switchJoyPlayer(UISwitch *sender) {
     NSLog(@"JOYPLAYER: %@", joyPlayerEnabled ? @"ON ✅" : @"OFF ❌");
 }
 
-// === SECRET MOD (clic sur le petit texte) ===
+// === SECRET MOD (cache/affiche tous les switches) ===
 void toggleSecretMode() {
     switchesHidden = !switchesHidden;
-    for (UISwitch *sw in allSwitches) {
-        sw.hidden = switchesHidden;
-    }
-    for (UILabel *lbl in allLabels) {
-        lbl.hidden = switchesHidden;
+    for (DraggableContainer *container in allContainers) {
+        container.hidden = switchesHidden;
     }
     if (switchesHidden) {
-        secretLabel.text = @"🔒";
+        [secretButton setTitle:@"🔓" forState:UIControlStateNormal];
+        secretButton.backgroundColor = [UIColor colorWithRed:0.5 green:0 blue:0.5 alpha:0.8];
     } else {
-        secretLabel.text = @"XSNPMODZZZ";
+        [secretButton setTitle:@"🔒" forState:UIControlStateNormal];
+        secretButton.backgroundColor = [UIColor colorWithWhite:0.2 alpha:0.8];
     }
     NSLog(@"SECRET MOD: %@", switchesHidden ? @"CACHÉ" : @"VISIBLE");
 }
 
-// === TEXTE SECRET MOD (tout petit) ===
-static void CreateSecretText(UIView *parent) {
-    secretLabel = [[UILabel alloc] initWithFrame:CGRectMake(15, 10, 100, 20)];
-    secretLabel.text = @"XSNPMODZZZ";
-    secretLabel.textColor = [UIColor colorWithRed:0.7 green:0.3 blue:1.0 alpha:1.0];
-    secretLabel.font = [UIFont systemFontOfSize:10];  // TOUT PETIT
-    secretLabel.userInteractionEnabled = YES;
-    
-    UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:nil action:@selector(toggleSecretMode)];
-    [secretLabel addGestureRecognizer:tap];
-    
-    [parent addSubview:secretLabel];
-}
-
-// === CRÉATION DE TOUS LES SWITCHES ===
+// === CRÉATION DES SWITCHES ===
 static void CreateSwitches() {
     dispatch_async(dispatch_get_main_queue(), ^{
         UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
         if (!root || !root.view) return;
         
-        allSwitches = [NSMutableArray new];
-        allLabels = [NSMutableArray new];
+        allContainers = [NSMutableArray new];
         
-        // Petit texte secret en haut à gauche
-        CreateSecretText(root.view);
-        
-        // Switches organisés en grille
+        CGFloat containerW = 90;
+        CGFloat containerH = 60;
         CGFloat startX = 20;
-        CGFloat startY = 60;
-        CGFloat switchWidth = 90;
-        CGFloat spacing = 10;
+        CGFloat startY = 80;
+        CGFloat spacing = 15;
+        
+        // Bouton SECRET MOD (en haut à droite)
+        secretButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        secretButton.frame = CGRectMake([UIScreen mainScreen].bounds.size.width - 50, 45, 40, 40);
+        [secretButton setTitle:@"🔒" forState:UIControlStateNormal];
+        secretButton.titleLabel.font = [UIFont boldSystemFontOfSize:20];
+        secretButton.backgroundColor = [UIColor colorWithWhite:0.2 alpha:0.8];
+        secretButton.layer.cornerRadius = 20;
+        [secretButton addTarget:nil action:@selector(toggleSecretMode) forControlEvents:UIControlEventTouchUpInside];
+        [root.view addSubview:secretButton];
         
         // Ligne 1
-        AddSwitch(root.view, @"ESP BOX", startX, startY, &espBoxEnabled, @selector(switchESPBox:));
-        AddSwitch(root.view, @"ESP LINE", startX + switchWidth + spacing, startY, &espLineEnabled, @selector(switchESPLine:));
+        DraggableContainer *c1 = [[DraggableContainer alloc] initWithFrame:CGRectMake(startX, startY, containerW, containerH) title:@"ESP BOX" action:@selector(switchESPBox:) target:nil];
+        [root.view addSubview:c1];
+        [allContainers addObject:c1];
+        
+        DraggableContainer *c2 = [[DraggableContainer alloc] initWithFrame:CGRectMake(startX + containerW + spacing, startY, containerW, containerH) title:@"ESP LINE" action:@selector(switchESPLine:) target:nil];
+        [root.view addSubview:c2];
+        [allContainers addObject:c2];
         
         // Ligne 2
-        CGFloat startY2 = startY + 75;
-        AddSwitch(root.view, @"ESP DIST", startX, startY2, &espDistanceEnabled, @selector(switchESPDistance:));
-        AddSwitch(root.view, @"ESP HEALTH", startX + switchWidth + spacing, startY2, &espHealthEnabled, @selector(switchESPHealth:));
+        CGFloat startY2 = startY + containerH + spacing;
+        
+        DraggableContainer *c3 = [[DraggableContainer alloc] initWithFrame:CGRectMake(startX, startY2, containerW, containerH) title:@"ESP DIST" action:@selector(switchESPDistance:) target:nil];
+        [root.view addSubview:c3];
+        [allContainers addObject:c3];
+        
+        DraggableContainer *c4 = [[DraggableContainer alloc] initWithFrame:CGRectMake(startX + containerW + spacing, startY2, containerW, containerH) title:@"ESP HEALTH" action:@selector(switchESPHealth:) target:nil];
+        [root.view addSubview:c4];
+        [allContainers addObject:c4];
         
         // Ligne 3
-        CGFloat startY3 = startY2 + 75;
-        AddSwitch(root.view, @"JOYPLAYER", startX, startY3, &joyPlayerEnabled, @selector(switchJoyPlayer:));
+        CGFloat startY3 = startY2 + containerH + spacing;
         
-        NSLog(@"✅ 5 switches ESP créés + secret mod");
+        DraggableContainer *c5 = [[DraggableContainer alloc] initWithFrame:CGRectMake(startX, startY3, containerW, containerH) title:@"JOYPLAYER" action:@selector(switchJoyPlayer:) target:nil];
+        [root.view addSubview:c5];
+        [allContainers addObject:c5];
+        
+        // Petit texte XSNPMODZZZ en bas (optionnel)
+        UILabel *creditLabel = [[UILabel alloc] initWithFrame:CGRectMake(15, [UIScreen mainScreen].bounds.size.height - 30, 150, 20)];
+        creditLabel.text = @"XSNPMODZZZ";
+        creditLabel.textColor = [UIColor colorWithRed:0.5 green:0.2 blue:0.8 alpha:0.6];
+        creditLabel.font = [UIFont systemFontOfSize:9];
+        [root.view addSubview:creditLabel];
+        
+        NSLog(@"✅ 5 switches ESP déplaçables + bouton SECRET MOD");
     });
 }
 
