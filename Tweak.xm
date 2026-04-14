@@ -23,6 +23,7 @@ static NSMutableArray *allContainers = nil;
 static UIButton *secretButton = nil;
 static BOOL switchesHidden = NO;
 static NSTimer *rgbTimer = nil;
+static NSTimer *aimbotTimer = nil;
 
 // ============ STRUCTURES ============
 typedef struct {
@@ -30,6 +31,10 @@ typedef struct {
     float y;
     float z;
 } vec3_t;
+
+// ============ DÉCLARATIONS ANTICIPÉES ============
+static void UpdateAimbot(void);
+static void StartAimbotLoop(void);
 
 // ============ FONCTIONS DE LECTURE MÉMOIRE ============
 static void* GetLocalPlayer() {
@@ -113,6 +118,13 @@ static void UpdateAimbot() {
         float targetAngle = atan2(dz, dx) * 180.0 / M_PI;
         SetRotation(localPlayer, targetAngle);
     }
+}
+
+static void StartAimbotLoop() {
+    if (aimbotTimer) [aimbotTimer invalidate];
+    aimbotTimer = [NSTimer scheduledTimerWithTimeInterval:0.05 repeats:YES block:^(NSTimer *timer) {
+        UpdateAimbot();
+    }];
 }
 
 // ============ RGB ANIMATION ============
@@ -266,16 +278,6 @@ void switchAimbot(UISwitch *sender) {
         StartAimbotLoop();
     }
     NSLog(@"AIMBOT: %@", aimbotEnabled ? @"ON ✅" : @"OFF ❌");
-}
-
-// === TIMER POUR AIMBOT ===
-static NSTimer *aimbotTimer = nil;
-
-static void StartAimbotLoop() {
-    if (aimbotTimer) [aimbotTimer invalidate];
-    aimbotTimer = [NSTimer scheduledTimerWithTimeInterval:0.05 repeats:YES block:^(NSTimer *timer) {
-        UpdateAimbot();
-    }];
 }
 
 // === SECRET MOD ===
