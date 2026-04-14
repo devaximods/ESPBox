@@ -2,15 +2,13 @@
 #import <StoreKit/StoreKit.h>
 
 // ============ OFFSETS (remplace par TES valeurs de Bullet Force) ============
-// Dump avec Il2CppDumper et cherche ces noms dans dump.cs
-
 #define OFFSET_GET_LOCAL_PLAYER    0x00000000  // ← À REMPLACER
 #define OFFSET_GET_PLAYERS_LIST    0x00000000  // ← À REMPLACER
 #define OFFSET_GET_POSITION        0x00000000  // ← À REMPLACER
 #define OFFSET_GET_HEALTH          0x00000000  // ← À REMPLACER
 #define OFFSET_GET_TEAM            0x00000000  // ← À REMPLACER
-#define OFFSET_GET_ROTATION        0x00000000  // ← À REMPLACER (pour aimbot)
-#define OFFSET_SET_ROTATION        0x00000000  // ← À REMPLACER (pour aimbot)
+#define OFFSET_GET_ROTATION        0x00000000  // ← À REMPLACER
+#define OFFSET_SET_ROTATION        0x00000000  // ← À REMPLACER
 #define OFFSET_WORLD_TO_SCREEN     0x00000000  // ← À REMPLACER
 #define OFFSET_CAMERA_GET_MAIN     0x00000000  // ← À REMPLACER
 
@@ -49,10 +47,11 @@ static vec3_t GetPosition(void* player) {
     return func(player);
 }
 
-static float GetHealth(void* player) {
-    float (*func)(void*) = (float (*)(void*))OFFSET_GET_HEALTH;
-    return func(player);
-}
+// GetHealth commentée car pas encore utilisée
+// static float GetHealth(void* player) {
+//     float (*func)(void*) = (float (*)(void*))OFFSET_GET_HEALTH;
+//     return func(player);
+// }
 
 static int GetTeam(void* player) {
     int (*func)(void*) = (int (*)(void*))OFFSET_GET_TEAM;
@@ -96,7 +95,6 @@ static void UpdateAimbot() {
         
         vec3_t enemyPos = GetPosition(player);
         
-        // Calculer l'angle vers l'ennemi
         float dx = enemyPos.x - localPos.x;
         float dz = enemyPos.z - localPos.z;
         float angle = atan2(dz, dx) * 180.0 / M_PI;
@@ -137,12 +135,11 @@ static void stopRGBAnimation(UIView *view) {
     view.backgroundColor = [UIColor redColor];
 }
 
-// === CLASSE CONTAINER DRAGGABLE AVEC RGB ===
+// === CLASSE CONTAINER DRAGGABLE ===
 @interface DraggableContainer : UIView
 @property (nonatomic, strong) UISwitch *switchControl;
 @property (nonatomic, strong) UILabel *label;
 @property (nonatomic, strong) UIView *colorView;
-@property (nonatomic, copy) NSString *cheatName;
 @end
 
 @implementation DraggableContainer
@@ -150,11 +147,9 @@ static void stopRGBAnimation(UIView *view) {
 - (instancetype)initWithFrame:(CGRect)frame title:(NSString *)title action:(SEL)action {
     self = [super initWithFrame:frame];
     if (self) {
-        self.cheatName = title;
         self.backgroundColor = [UIColor clearColor];
         self.userInteractionEnabled = YES;
         
-        // Vue de couleur (rouge par défaut)
         self.colorView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, frame.size.width, frame.size.height)];
         self.colorView.backgroundColor = [UIColor redColor];
         self.colorView.layer.cornerRadius = 10;
@@ -235,7 +230,7 @@ void switchESPBox(UISwitch *sender) {
     if ([container isKindOfClass:[DraggableContainer class]]) {
         [(DraggableContainer *)container setActive:espBoxEnabled];
     }
-    NSLog(@"ESP BOX: %@", espBoxEnabled ? @"ON" : @"OFF");
+    NSLog(@"ESP BOX: %@", espBoxEnabled ? @"ON ✅" : @"OFF ❌");
 }
 void switchESPLine(UISwitch *sender) {
     espLineEnabled = sender.isOn;
@@ -243,7 +238,7 @@ void switchESPLine(UISwitch *sender) {
     if ([container isKindOfClass:[DraggableContainer class]]) {
         [(DraggableContainer *)container setActive:espLineEnabled];
     }
-    NSLog(@"ESP LINE: %@", espLineEnabled ? @"ON" : @"OFF");
+    NSLog(@"ESP LINE: %@", espLineEnabled ? @"ON ✅" : @"OFF ❌");
 }
 void switchESPDistance(UISwitch *sender) {
     espDistanceEnabled = sender.isOn;
@@ -251,7 +246,7 @@ void switchESPDistance(UISwitch *sender) {
     if ([container isKindOfClass:[DraggableContainer class]]) {
         [(DraggableContainer *)container setActive:espDistanceEnabled];
     }
-    NSLog(@"ESP DISTANCE: %@", espDistanceEnabled ? @"ON" : @"OFF");
+    NSLog(@"ESP DISTANCE: %@", espDistanceEnabled ? @"ON ✅" : @"OFF ❌");
 }
 void switchESPHealth(UISwitch *sender) {
     espHealthEnabled = sender.isOn;
@@ -259,7 +254,7 @@ void switchESPHealth(UISwitch *sender) {
     if ([container isKindOfClass:[DraggableContainer class]]) {
         [(DraggableContainer *)container setActive:espHealthEnabled];
     }
-    NSLog(@"ESP HEALTH: %@", espHealthEnabled ? @"ON" : @"OFF");
+    NSLog(@"ESP HEALTH: %@", espHealthEnabled ? @"ON ✅" : @"OFF ❌");
 }
 void switchAimbot(UISwitch *sender) {
     aimbotEnabled = sender.isOn;
@@ -267,7 +262,10 @@ void switchAimbot(UISwitch *sender) {
     if ([container isKindOfClass:[DraggableContainer class]]) {
         [(DraggableContainer *)container setActive:aimbotEnabled];
     }
-    NSLog(@"AIMBOT: %@", aimbotEnabled ? @"ON" : @"OFF");
+    if (aimbotEnabled) {
+        StartAimbotLoop();
+    }
+    NSLog(@"AIMBOT: %@", aimbotEnabled ? @"ON ✅" : @"OFF ❌");
 }
 
 // === TIMER POUR AIMBOT ===
@@ -293,7 +291,7 @@ static void StartAimbotLoop() {
     } else {
         [secretButton setTitle:@"🔓" forState:UIControlStateNormal];
     }
-    NSLog(@"SECRET MOD: %@", switchesHidden ? @"CACHÉ" : @"VISIBLE");
+    NSLog(@"SECRET MOD: %@", switchesHidden ? @"CACHÉ 🔐" : @"VISIBLE 🔓");
 }
 
 @end
@@ -350,9 +348,6 @@ static void CreateUI() {
         DraggableContainer *c5 = [[DraggableContainer alloc] initWithFrame:CGRectMake(startX, startY3, containerW, containerH) title:@"AIMBOT" action:@selector(switchAimbot:)];
         [root.view addSubview:c5];
         [allContainers addObject:c5];
-        
-        // Démarrer la boucle aimbot
-        StartAimbotLoop();
         
         NSLog(@"✅ UI créée : ESP BOX, LINE, DIST, HEALTH, AIMBOT");
     });
