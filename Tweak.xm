@@ -1,4 +1,4 @@
-// Tweak.xm - XSNPMODZ MENU GRIS TRANSPARENT + 3 CLICS + MESSAGE HACKED + SEULEMENT ESP
+// Tweak.xm - XSNPMODZ MENU GRIS TRANSPARENT + 3 CLICS + MESSAGE HACKED + SEULEMENT ESP (VERSION SIMPLE)
 
 #import <UIKit/UIKit.h>
 #import <StoreKit/StoreKit.h>
@@ -46,13 +46,13 @@ BOOL espJoystickEnabled = NO;
             tapCount++;
             if (tapCount >= 3) {
                 tapCount = 0;
-                [self showXSNPMODZMenu];
+                [self showMenu];
             }
         }
     }
 }
 
-- (void)showXSNPMODZMenu {
+- (void)showMenu {
     if (menuOpen) return;
     menuOpen = YES;
     
@@ -62,9 +62,6 @@ BOOL espJoystickEnabled = NO;
     panel.layer.cornerRadius = 24;
     panel.layer.borderWidth = 2.5;
     panel.layer.borderColor = [UIColor colorWithRed:0.7 green:0.7 blue:0.75 alpha:1.0].CGColor;
-    panel.layer.shadowColor = [UIColor grayColor].CGColor;
-    panel.layer.shadowRadius = 18;
-    panel.layer.shadowOpacity = 0.6;
     
     UILabel *title = [[UILabel alloc] initWithFrame:CGRectMake(0, 20, panel.frame.size.width, 45)];
     title.text = @"XSNPMODZ";
@@ -73,6 +70,7 @@ BOOL espJoystickEnabled = NO;
     title.textAlignment = NSTextAlignmentCenter;
     [panel addSubview:title];
     
+    // ESP seulement
     [self addSwitch:@"ESP BOX" to:panel atY:80 var:&espBoxEnabled];
     [self addSwitch:@"ESP LINE" to:panel atY:130 var:&espLineEnabled];
     [self addSwitch:@"ESP DISTANCE" to:panel atY:180 var:&espDistanceEnabled];
@@ -85,7 +83,6 @@ BOOL espJoystickEnabled = NO;
     [closeBtn setTitle:@"CLOSE MENU" forState:UIControlStateNormal];
     closeBtn.backgroundColor = [UIColor colorWithRed:0.2 green:0.8 blue:0.2 alpha:1.0];
     closeBtn.layer.cornerRadius = 16;
-    closeBtn.titleLabel.font = [UIFont boldSystemFontOfSize:19];
     [closeBtn addTarget:panel action:@selector(removeFromSuperview) forControlEvents:UIControlEventTouchUpInside];
     [panel addSubview:closeBtn];
     
@@ -110,7 +107,6 @@ BOOL espJoystickEnabled = NO;
 }
 
 - (void)switchChanged:(UISwitch *)sw {
-    // variables mises à jour
 }
 
 - (void)handlePan:(UIPanGestureRecognizer *)gesture {
