@@ -245,7 +245,29 @@ static void StartGameLoop() {
 
 @end
 
-// === ACTIONS (identiques) ===
+// === NOUVEAU BOUTON RESET GUEST ===
+void resetGuestAccount() {
+    NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
+    
+    // 1. Supprime toutes les préférences
+    [[NSUserDefaults standardUserDefaults] removePersistentDomainForName:bundleID];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+    
+    // 2. Supprime les fichiers Documents (sauvegardes)
+    NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
+    [[NSFileManager defaultManager] removeItemAtPath:documentsPath error:nil];
+    
+    // 3. Supprime le cache
+    NSString *cachePath = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) firstObject];
+    [[NSFileManager defaultManager] removeItemAtPath:cachePath error:nil];
+    
+    NSLog(@"👾💻 [XSNPOWWWWWW] RESET GUEST effectué - toutes les données supprimées");
+    
+    // 4. Ferme l'app
+    exit(0);
+}
+
+// === ACTIONS (identiques + reset) ===
 void updateESPBox() { espBoxEnabled = !espBoxEnabled; if (!gameTimer) StartGameLoop(); }
 void updateESPLine() { espLineEnabled = !espLineEnabled; }
 void updateESPDistance() { espDistanceEnabled = !espDistanceEnabled; }
@@ -253,7 +275,7 @@ void updateESPHealth() { espHealthEnabled = !espHealthEnabled; }
 void updateAimbot() { aimbotEnabled = !aimbotEnabled; if (!gameTimer) StartGameLoop(); }
 void updateSpinbot() { spinbotEnabled = !spinbotEnabled; if (spinbotEnabled && aimbotEnabled) aimbotEnabled = NO; if (!gameTimer) StartGameLoop(); }
 
-// === CRÉATION DE L'UI ===
+// === CRÉATION DE L'UI (boutons fixés + label discret) ===
 static void CreateUI() {
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 4 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
         NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
@@ -262,7 +284,7 @@ static void CreateUI() {
         if (isFreeFire) {
             NSLog(@"👾💻 [XSNPOWWWWWW] Free Fire détecté → hacks activés");
         } else {
-            NSLog(@"👾💻 [XSNPOWWWWWW] App non-FreeFire → memory hacks désactivés (pas de crash)");
+            NSLog(@"👾💻 [XSNPOWWWWWW] App non-FreeFire → memory hacks désactivés");
         }
         
         UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
@@ -279,13 +301,15 @@ static void CreateUI() {
         CGFloat screenH = [UIScreen mainScreen].bounds.size.height;
         CGFloat btnW = 100, btnH = 40;
         
-        UILabel *xsnLabel = [[UILabel alloc] initWithFrame:CGRectMake(10, 30, 300, 30)];
-        xsnLabel.text = isFreeFire ? @"🔥 XSNPOWWWWWW FREE FIRE 🔥" : @"🔥 XSNPOWWWWWW MODZZZ 🔥";
-        xsnLabel.textColor = [UIColor colorWithRed:1.0 green:0.0 blue:1.0 alpha:1.0];
-        xsnLabel.font = [UIFont boldSystemFontOfSize:18];
+        // Label discret en haut (noir, plus petit, beau)
+        UILabel *xsnLabel = [[UILabel alloc] initWithFrame:CGRectMake(15, 15, 280, 20)];
+        xsnLabel.text = @"XSNPMODZCHEATFFGOTHACKED";
+        xsnLabel.textColor = [UIColor blackColor];
+        xsnLabel.font = [UIFont systemFontOfSize:11 weight:UIFontWeightLight];
+        xsnLabel.alpha = 0.75;
         [root.view addSubview:xsnLabel];
         
-        secretButton = [[SecretButton alloc] initWithFrame:CGRectMake(screenW - 60, 50, 50, 50)];
+        secretButton = [[SecretButton alloc] initWithFrame:CGRectMake(screenW - 60, 45, 50, 50)];
         [root.view addSubview:secretButton];
         
         NSArray *titles = @[@"ESP BOX", @"ESP LINE", @"ESP DIST", @"ESP HEALTH", @"AIMBOT", @"SPINBOT"];
@@ -295,8 +319,8 @@ static void CreateUI() {
             [NSValue valueWithCGRect:CGRectMake(20, 200, btnW, btnH)],
             [NSValue valueWithCGRect:CGRectMake(screenW - btnW - 20, 200, btnW, btnH)],
             [NSValue valueWithCGRect:CGRectMake(screenW/2 - btnW/2, 280, btnW, btnH)],
-            [NSValue valueWithCGRect:CGRectMake(20, screenH - 110, btnW, btnH)],
-            [NSValue valueWithCGRect:CGRectMake(screenW - btnW - 20, screenH - 110, btnW, btnH)]
+            [NSValue valueWithCGRect:CGRectMake(20, screenH - 160, btnW, btnH)],
+            [NSValue valueWithCGRect:CGRectMake(screenW - btnW - 20, screenH - 160, btnW, btnH)]
         ];
         
         for (int i = 0; i < 6; i++) {
@@ -305,9 +329,25 @@ static void CreateUI() {
             [allButtons addObject:btn];
         }
         
+        // Bouton RESET GUEST en bas centré
+        UIButton *resetButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        resetButton.frame = CGRectMake(screenW/2 - 80, screenH - 80, 160, 45);
+        [resetButton setTitle:@"RESET GUEST" forState:UIControlStateNormal];
+        [resetButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+        resetButton.backgroundColor = [UIColor colorWithRed:0.8 green:0.1 blue:0.1 alpha:0.9];
+        resetButton.layer.cornerRadius = 12;
+        resetButton.titleLabel.font = [UIFont boldSystemFontOfSize:14];
+        [resetButton addTarget:nil action:@selector(resetGuestAction) forControlEvents:UIControlEventTouchUpInside];
+        [root.view addSubview:resetButton];
+        [allButtons addObject:resetButton];
+        
         if (isFreeFire) StartGameLoop();
-        NSLog(@"✅👾 [XSNPOWWWWWW] MENU VISIBLE - Build corrigé");
+        NSLog(@"✅👾 [XSNPOWWWWWW] MENU VISIBLE - Boutons fixés + RESET GUEST ajouté");
     });
+}
+
+void resetGuestAction() {
+    resetGuestAccount();
 }
 
 %ctor {
