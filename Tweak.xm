@@ -26,7 +26,7 @@ static __unused BOOL buttonsHidden = NO;
 static NSTimer *gameTimer = nil;
 
 static BOOL isFreeFire = NO;
-static BOOL cheatsEnabled = NO;   // <--- NOUVEAU : tout est désactivé au début
+static BOOL cheatsEnabled = NO;   // tout reste OFF au début
 
 // ============ STRUCTURES ============
 typedef struct { float x; float y; float z; } vec3_t;
@@ -112,7 +112,7 @@ static void UpdateGame() {
     if (!isFreeFire || !cheatsEnabled) return;
     static int delayCounter = 0;
     delayCounter++;
-    if (delayCounter < 60) return;   // attend ~3 secondes avant de toucher la mémoire
+    if (delayCounter < 60) return;
     
     @autoreleasepool {
         void* localPlayer = SafeGetLocalPlayer();
@@ -230,7 +230,7 @@ static void StartGameLoop() {
 
 @end
 
-// === BOUTON SECRET (maintenant = "ACTIVATE ALL CHEATS") ===
+// === BOUTON SECRET = ACTIVATE ALL CHEATS ============
 @interface SecretButton : UIButton
 @end
 
@@ -264,17 +264,21 @@ static void StartGameLoop() {
         [self setTitle:@"🔓 ON" forState:UIControlStateNormal];
         self.backgroundColor = [UIColor colorWithRed:0.0 green:0.8 blue:0.0 alpha:0.9];
         if (!gameTimer) StartGameLoop();
-        NSLog(@"👾💻 [XSNPOWWWWWW] TOUS LES CHEATS ACTIVÉS - tu es dans la game, tout marche");
+        NSLog(@"👾💻 [XSNPOWWWWWW] TOUS LES CHEATS ACTIVÉS - tu es dans la game");
+        
+        // Montre tous les boutons
+        for (UIView *btn in allButtons) {
+            if (btn != secretButton) btn.hidden = NO;
+        }
     } else {
         [self setTitle:@"🔒 OFF" forState:UIControlStateNormal];
         self.backgroundColor = [UIColor colorWithRed:0.0 green:0.6 blue:0.0 alpha:0.85];
         NSLog(@"👾💻 [XSNPOWWWWWW] Cheats désactivés");
-    }
-    
-    // Cache ou montre les boutons selon l'état
-    buttonsHidden = !cheatsEnabled;
-    for (UIView *btn in allButtons) {
-        if (btn != secretButton) btn.hidden = buttonsHidden;
+        
+        // Cache tous les boutons
+        for (UIView *btn in allButtons) {
+            if (btn != secretButton) btn.hidden = YES;
+        }
     }
 }
 
@@ -315,7 +319,7 @@ static void StartGameLoop() {
 
 @end
 
-// === ACTIONS (identiques) ===
+// === ACTIONS ===
 void updateESPBox() { espBoxEnabled = !espBoxEnabled; if (!gameTimer) StartGameLoop(); }
 void updateESPLine() { espLineEnabled = !espLineEnabled; }
 void updateESPDistance() { espDistanceEnabled = !espDistanceEnabled; }
@@ -343,14 +347,13 @@ static void CreateUI() {
         CGFloat screenH = [UIScreen mainScreen].bounds.size.height;
         CGFloat btnW = 100, btnH = 40;
         
-        UILabel *xsnLabel = [[UILabel alloc] initWithFrame:CGRectMake(15, 15, 280, 20));
+        UILabel *xsnLabel = [[UILabel alloc] initWithFrame:CGRectMake(15, 15, 280, 20)];
         xsnLabel.text = @"XSNPMODZCHEATFFGOTHACKED";
         xsnLabel.textColor = [UIColor blackColor];
         xsnLabel.font = [UIFont systemFontOfSize:11 weight:UIFontWeightLight];
         xsnLabel.alpha = 0.75;
         [root.view addSubview:xsnLabel];
         
-        // Secret button = bouton principal "ACTIVATE ALL"
         secretButton = [[SecretButton alloc] initWithFrame:CGRectMake(screenW - 65, 45, 55, 55)];
         [root.view addSubview:secretButton];
         
@@ -372,17 +375,16 @@ static void CreateUI() {
             [allButtons addObject:btn];
         }
         
-        // RESET GUEST draggable
         ResetButton *resetBtn = [[ResetButton alloc] initWithFrame:CGRectMake(screenW/2 - 80, screenH - 100, 160, 45)];
         [root.view addSubview:resetBtn];
         [allButtons addObject:resetBtn];
         
-        NSLog(@"✅👾 [XSNPOWWWWWW] MENU chargé - Appuie sur le gros 🔓 pour activer tous les cheats quand tu es en game");
+        NSLog(@"✅👾 [XSNPOWWWWWW] MENU chargé - Appuie sur 🔓 quand tu es dans la game");
     });
 }
 
 %ctor {
-    NSLog(@"👾💻 [XSNPOWWWWWW] dylib chargé - mode safe (cheats OFF au début)");
+    NSLog(@"👾💻 [XSNPOWWWWWW] dylib chargé - cheats OFF au début");
     CreateUI();
 }
 
