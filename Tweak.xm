@@ -1,7 +1,6 @@
 #import <UIKit/UIKit.h>
-#import <StoreKit/StoreKit.h>
 
-// ============ TES OFFSETS ============
+// ============ OFFSETS (Free Fire - à vérifier) ============
 #define OFFSET_GET_LOCAL_PLAYER    0x3585978
 #define OFFSET_GET_PLAYERS_LIST    0x5D70930
 #define OFFSET_GET_POSITION        0x1185A30
@@ -60,12 +59,6 @@ static int GetTeam(void* player) {
     return func(player);
 }
 
-// GetHealth commentée (pas encore utilisée)
-// static int GetHealth(void* player) {
-//     int (*func)(void*) = (int (*)(void*))OFFSET_GET_HEALTH;
-//     return func(player);
-// }
-
 static quaternion_t GetRotationQuat(void* player) {
     quaternion_t (*func)(void*) = (quaternion_t (*)(void*))OFFSET_GET_ROTATION;
     return func(player);
@@ -92,18 +85,23 @@ static quaternion_t YawToQuaternion(float yaw) {
     return q;
 }
 
-// ============ CAMERA (commentée car pas encore utilisée) ============
-// static void* GetMainCamera() {
-//     void* (*func)() = (void* (*)())OFFSET_CAMERA_GET_MAIN;
-//     return func();
-// }
-
-// static vec3_t WorldToScreenPoint(vec3_t worldPos) {
-//     vec3_t (*func)(void*, vec3_t) = (vec3_t (*)(void*, vec3_t))OFFSET_WORLD_TO_SCREEN;
-//     void* camera = GetMainCamera();
-//     if (!camera) return (vec3_t){0,0,0};
-//     return func(camera, worldPos);
-// }
+// ============ RESET GUEST ============
+static void ResetGuest() {
+    // Supprime les données de l'app (compte invité)
+    NSString *appDomain = [[NSBundle mainBundle] bundleIdentifier];
+    [[NSUserDefaults standardUserDefaults] removePersistentDomainForName:appDomain];
+    
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"✅ RESET GUEST" 
+                                                                       message:@"Compte invité réinitialisé. Redémarre l'application pour créer un nouveau compte." 
+                                                                preferredStyle:UIAlertControllerStyleAlert];
+        [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+            exit(0); // Ferme l'app pour appliquer le reset
+        }]];
+        UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
+        [root presentViewController:alert animated:YES completion:nil];
+    });
+}
 
 // ============ UPDATE GLOBAL ============
 static void UpdateGame() {
@@ -111,15 +109,12 @@ static void UpdateGame() {
         void* localPlayer = GetLocalPlayer();
         if (!localPlayer) return;
         
-        // SPINBOT
         if (spinbotEnabled) {
             quaternion_t rot = GetRotationQuat(localPlayer);
             float yaw = QuaternionToYaw(rot);
             yaw += 30.0f;
             SetRotationQuat(localPlayer, YawToQuaternion(yaw));
         }
-        
-        // AIMBOT
         else if (aimbotEnabled) {
             vec3_t localPos = GetPosition(localPlayer);
             int localTeam = GetTeam(localPlayer);
@@ -271,6 +266,7 @@ void updateESPDistance() { espDistanceEnabled = !espDistanceEnabled; }
 void updateESPHealth() { espHealthEnabled = !espHealthEnabled; }
 void updateAimbot() { aimbotEnabled = !aimbotEnabled; if (!gameTimer) StartGameLoop(); }
 void updateSpinbot() { spinbotEnabled = !spinbotEnabled; if (spinbotEnabled && aimbotEnabled) aimbotEnabled = NO; if (!gameTimer) StartGameLoop(); }
+void updateResetGuest() { ResetGuest(); }
 
 // === CRÉATION DE L'UI ===
 static void CreateUI() {
@@ -284,34 +280,38 @@ static void CreateUI() {
         CGFloat screenH = [UIScreen mainScreen].bounds.size.height;
         CGFloat btnW = 100, btnH = 40;
         
+        // Texte XSNPMODZZZ
         UILabel *xsnLabel = [[UILabel alloc] initWithFrame:CGRectMake(10, 10, 120, 15)];
         xsnLabel.text = @"XSNPMODZZZ";
         xsnLabel.textColor = [UIColor colorWithRed:0.6 green:0.2 blue:1.0 alpha:0.7];
         xsnLabel.font = [UIFont systemFontOfSize:9];
         [root.view addSubview:xsnLabel];
         
+        // Bouton secret
         secretButton = [[SecretButton alloc] initWithFrame:CGRectMake(screenW - 50, 45, 40, 40)];
         [root.view addSubview:secretButton];
         
-        NSArray *titles = @[@"ESP BOX", @"ESP LINE", @"ESP DIST", @"ESP HEALTH", @"AIMBOT", @"SPINBOT"];
-        NSArray *selectors = @[^{ updateESPBox(); }, ^{ updateESPLine(); }, ^{ updateESPDistance(); }, ^{ updateESPHealth(); }, ^{ updateAimbot(); }, ^{ updateSpinbot(); }];
+        // 7 boutons (ESP BOX, LINE, DIST, HEALTH, AIMBOT, SPINBOT, RESET GUEST)
+        NSArray *titles = @[@"ESP BOX", @"ESP LINE", @"ESP DIST", @"ESP HEALTH", @"AIMBOT", @"SPINBOT", @"RESET GUEST"];
+        NSArray *selectors = @[^{ updateESPBox(); }, ^{ updateESPLine(); }, ^{ updateESPDistance(); }, ^{ updateESPHealth(); }, ^{ updateAimbot(); }, ^{ updateSpinbot(); }, ^{ updateResetGuest(); }];
         NSArray *positions = @[
             [NSValue valueWithCGRect:CGRectMake(screenW/2 - btnW/2, 100, btnW, btnH)],
             [NSValue valueWithCGRect:CGRectMake(20, 180, btnW, btnH)],
             [NSValue valueWithCGRect:CGRectMake(screenW - btnW - 20, 180, btnW, btnH)],
             [NSValue valueWithCGRect:CGRectMake(screenW/2 - btnW/2, 270, btnW, btnH)],
-            [NSValue valueWithCGRect:CGRectMake(20, screenH - 100, btnW, btnH)],
-            [NSValue valueWithCGRect:CGRectMake(screenW - btnW - 20, screenH - 100, btnW, btnH)]
+            [NSValue valueWithCGRect:CGRectMake(20, screenH - 150, btnW, btnH)],
+            [NSValue valueWithCGRect:CGRectMake(screenW - btnW - 20, screenH - 150, btnW, btnH)],
+            [NSValue valueWithCGRect:CGRectMake(screenW/2 - btnW/2, screenH - 90, btnW, btnH)]
         ];
         
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < 7; i++) {
             DraggableButton *btn = [[DraggableButton alloc] initWithFrame:[positions[i] CGRectValue] title:titles[i] block:selectors[i]];
             [root.view addSubview:btn];
             [allButtons addObject:btn];
         }
         
         StartGameLoop();
-        NSLog(@"✅ UI créée - 6 boutons");
+        NSLog(@"✅ UI créée - 7 boutons (RESET GUEST inclus)");
     });
 }
 
@@ -320,7 +320,3 @@ static void CreateUI() {
         CreateUI();
     });
 }
-
-%hook SKPaymentQueue
-- (void)addPayment:(SKPayment *)payment { %orig; }
-%end
