@@ -31,7 +31,7 @@ static BOOL isFreeFire = NO;
 typedef struct { float x; float y; float z; } vec3_t;
 typedef struct { float x; float y; float z; float w; } quaternion_t;
 
-// ============ WRAPPERS SAFE (encore plus protégé pour FF) ============
+// ============ WRAPPERS SAFE ============
 static void* SafeGetLocalPlayer() {
     if (!isFreeFire) return NULL;
     static void* (*func)() = NULL;
@@ -90,13 +90,12 @@ static quaternion_t YawToQuaternion(float yaw) {
     return q;
 }
 
-// ============ UPDATE GAME (encore plus safe + delay interne) ============
+// ============ UPDATE GAME ============
 static void UpdateGame() {
     if (!isFreeFire) return;
-    
     static int delayCounter = 0;
     delayCounter++;
-    if (delayCounter < 40) return;  // attend ~2 secondes avant de toucher la mémoire
+    if (delayCounter < 40) return;
     
     @autoreleasepool {
         void* localPlayer = SafeGetLocalPlayer();
@@ -250,7 +249,42 @@ static void StartGameLoop() {
 
 @end
 
-// === RESET GUEST (inchangé) ===
+// === RESET GUEST (maintenant draggable comme les autres) ===
+@interface ResetButton : UIButton
+@end
+
+@implementation ResetButton
+
+- (instancetype)initWithFrame:(CGRect)frame {
+    self = [super initWithFrame:frame];
+    if (self) {
+        [self setTitle:@"RESET GUEST" forState:UIControlStateNormal];
+        [self setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+        self.backgroundColor = [UIColor colorWithRed:0.8 green:0.1 blue:0.1 alpha:0.9];
+        self.layer.cornerRadius = 12;
+        self.titleLabel.font = [UIFont boldSystemFontOfSize:14];
+        
+        [self addTarget:self action:@selector(resetTapped) forControlEvents:UIControlEventTouchUpInside];
+        
+        UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePan:)];
+        [self addGestureRecognizer:pan];
+    }
+    return self;
+}
+
+- (void)resetTapped {
+    resetGuestAccount();
+}
+
+- (void)handlePan:(UIPanGestureRecognizer *)gesture {
+    CGPoint translation = [gesture translationInView:self.superview];
+    self.center = CGPointMake(self.center.x + translation.x, self.center.y + translation.y);
+    [gesture setTranslation:CGPointZero inView:self.superview];
+}
+
+@end
+
+// === RESET FUNCTION ===
 void resetGuestAccount() {
     NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
     [[NSUserDefaults standardUserDefaults] removePersistentDomainForName:bundleID];
@@ -274,7 +308,7 @@ void updateESPHealth() { espHealthEnabled = !espHealthEnabled; }
 void updateAimbot() { aimbotEnabled = !aimbotEnabled; if (!gameTimer) StartGameLoop(); }
 void updateSpinbot() { spinbotEnabled = !spinbotEnabled; if (spinbotEnabled && aimbotEnabled) aimbotEnabled = NO; if (!gameTimer) StartGameLoop(); }
 
-// === CRÉATION DE L'UI (label discret + reset) ===
+// === CRÉATION DE L'UI ===
 static void CreateUI() {
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
         NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
@@ -311,8 +345,8 @@ static void CreateUI() {
             [NSValue valueWithCGRect:CGRectMake(20, 200, btnW, btnH)],
             [NSValue valueWithCGRect:CGRectMake(screenW - btnW - 20, 200, btnW, btnH)],
             [NSValue valueWithCGRect:CGRectMake(screenW/2 - btnW/2, 280, btnW, btnH)],
-            [NSValue valueWithCGRect:CGRectMake(20, screenH - 160, btnW, btnH)],
-            [NSValue valueWithCGRect:CGRectMake(screenW - btnW - 20, screenH - 160, btnW, btnH)]
+            [NSValue valueWithCGRect:CGRectMake(20, screenH - 170, btnW, btnH)],
+            [NSValue valueWithCGRect:CGRectMake(screenW - btnW - 20, screenH - 170, btnW, btnH)]
         ];
         
         for (int i = 0; i < 6; i++) {
@@ -321,29 +355,18 @@ static void CreateUI() {
             [allButtons addObject:btn];
         }
         
-        // RESET GUEST
-        UIButton *resetButton = [UIButton buttonWithType:UIButtonTypeSystem];
-        resetButton.frame = CGRectMake(screenW/2 - 80, screenH - 80, 160, 45);
-        [resetButton setTitle:@"RESET GUEST" forState:UIControlStateNormal];
-        [resetButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-        resetButton.backgroundColor = [UIColor colorWithRed:0.8 green:0.1 blue:0.1 alpha:0.9];
-        resetButton.layer.cornerRadius = 12;
-        resetButton.titleLabel.font = [UIFont boldSystemFontOfSize:14];
-        [resetButton addTarget:nil action:@selector(resetGuestAction) forControlEvents:UIControlEventTouchUpInside];
-        [root.view addSubview:resetButton];
-        [allButtons addObject:resetButton];
+        // RESET GUEST draggable comme les autres
+        ResetButton *resetBtn = [[ResetButton alloc] initWithFrame:CGRectMake(screenW/2 - 80, screenH - 100, 160, 45)];
+        [root.view addSubview:resetBtn];
+        [allButtons addObject:resetBtn];
         
         if (isFreeFire) StartGameLoop();
-        NSLog(@"✅👾 [XSNPOWWWWWW] MENU VISIBLE sur Free Fire - version anti-crash");
+        NSLog(@"✅👾 [XSNPOWWWWWW] MENU VISIBLE - Tous les boutons draggable + reset fixe");
     });
 }
 
-void resetGuestAction() {
-    resetGuestAccount();
-}
-
 %ctor {
-    NSLog(@"👾💻 [XSNPOWWWWWW] dylib chargé - version safe pour FF");
+    NSLog(@"👾💻 [XSNPOWWWWWW] dylib chargé - version safe FF");
     CreateUI();
 }
 
