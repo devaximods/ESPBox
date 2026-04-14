@@ -284,8 +284,8 @@ static void StartGameLoop() {
 
 @end
 
-// === RESET FUNCTION (déplacée avant CreateUI pour éviter l'erreur) ===
-void resetGuestAccount() {
+// === RESET FUNCTION (déclarée AVANT CreateUI) ===
+static void resetGuestAccount() {
     NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
     [[NSUserDefaults standardUserDefaults] removePersistentDomainForName:bundleID];
     [[NSUserDefaults standardUserDefaults] synchronize];
