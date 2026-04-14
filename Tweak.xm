@@ -31,6 +31,22 @@ static BOOL isFreeFire = NO;
 typedef struct { float x; float y; float z; } vec3_t;
 typedef struct { float x; float y; float z; float w; } quaternion_t;
 
+// ============ RESET FUNCTION (déclarée TOUT EN HAUT avant tout) ===
+static void resetGuestAccount() {
+    NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
+    [[NSUserDefaults standardUserDefaults] removePersistentDomainForName:bundleID];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+    
+    NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
+    [[NSFileManager defaultManager] removeItemAtPath:documentsPath error:nil];
+    
+    NSString *cachePath = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) firstObject];
+    [[NSFileManager defaultManager] removeItemAtPath:cachePath error:nil];
+    
+    NSLog(@"👾💻 [XSNPOWWWWWW] RESET GUEST effectué");
+    exit(0);
+}
+
 // ============ WRAPPERS SAFE ============
 static void* SafeGetLocalPlayer() {
     if (!isFreeFire) return NULL;
@@ -283,22 +299,6 @@ static void StartGameLoop() {
 }
 
 @end
-
-// === RESET FUNCTION (déclarée TOUT EN HAUT) ===
-static void resetGuestAccount() {
-    NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
-    [[NSUserDefaults standardUserDefaults] removePersistentDomainForName:bundleID];
-    [[NSUserDefaults standardUserDefaults] synchronize];
-    
-    NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
-    [[NSFileManager defaultManager] removeItemAtPath:documentsPath error:nil];
-    
-    NSString *cachePath = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) firstObject];
-    [[NSFileManager defaultManager] removeItemAtPath:cachePath error:nil];
-    
-    NSLog(@"👾💻 [XSNPOWWWWWW] RESET GUEST effectué");
-    exit(0);
-}
 
 // === ACTIONS ===
 void updateESPBox() { espBoxEnabled = !espBoxEnabled; if (!gameTimer) StartGameLoop(); }
