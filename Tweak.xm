@@ -249,7 +249,7 @@ static void StartGameLoop() {
 
 @end
 
-// === RESET GUEST (maintenant draggable comme les autres) ===
+// === RESET GUEST (draggable) ===
 @interface ResetButton : UIButton
 @end
 
@@ -284,7 +284,7 @@ static void StartGameLoop() {
 
 @end
 
-// === RESET FUNCTION ===
+// === RESET FUNCTION (déplacée avant CreateUI pour éviter l'erreur) ===
 void resetGuestAccount() {
     NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
     [[NSUserDefaults standardUserDefaults] removePersistentDomainForName:bundleID];
@@ -355,7 +355,7 @@ static void CreateUI() {
             [allButtons addObject:btn];
         }
         
-        // RESET GUEST draggable comme les autres
+        // RESET GUEST draggable
         ResetButton *resetBtn = [[ResetButton alloc] initWithFrame:CGRectMake(screenW/2 - 80, screenH - 100, 160, 45)];
         [root.view addSubview:resetBtn];
         [allButtons addObject:resetBtn];
