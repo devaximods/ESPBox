@@ -26,29 +26,46 @@ static __unused BOOL buttonsHidden = NO;
 static NSTimer *gameTimer = nil;
 
 static BOOL isFreeFire = NO;
-static BOOL cheatsEnabled = NO;   // tout reste OFF au début
+static BOOL cheatsEnabled = NO;
 
 // ============ STRUCTURES ============
 typedef struct { float x; float y; float z; } vec3_t;
 typedef struct { float x; float y; float z; float w; } quaternion_t;
 
-// ============ RESET FUNCTION ============
+// ============ RESET GUEST (fix complet) ============
 static void resetGuestAccount() {
+    NSLog(@"👾💻 [XSNPOWWWWWW] RESET GUEST démarré...");
+    
+    // 1. Supprime toutes les préférences de l'app
     NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
     [[NSUserDefaults standardUserDefaults] removePersistentDomainForName:bundleID];
     [[NSUserDefaults standardUserDefaults] synchronize];
     
+    // 2. Supprime le dossier Documents (sauvegardes principales de Free Fire)
     NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
-    [[NSFileManager defaultManager] removeItemAtPath:documentsPath error:nil];
+    if (documentsPath) {
+        [[NSFileManager defaultManager] removeItemAtPath:documentsPath error:nil];
+    }
     
+    // 3. Supprime le dossier Library (préférences + données supplémentaires)
+    NSString *libraryPath = [NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES) firstObject];
+    if (libraryPath) {
+        [[NSFileManager defaultManager] removeItemAtPath:libraryPath error:nil];
+    }
+    
+    // 4. Supprime le cache
     NSString *cachePath = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) firstObject];
-    [[NSFileManager defaultManager] removeItemAtPath:cachePath error:nil];
+    if (cachePath) {
+        [[NSFileManager defaultManager] removeItemAtPath:cachePath error:nil];
+    }
     
-    NSLog(@"👾💻 [XSNPOWWWWWW] RESET GUEST effectué");
+    NSLog(@"👾💻 [XSNPOWWWWWW] RESET GUEST terminé - toutes les données invité supprimées");
+    
+    // 5. Ferme l'app pour forcer le reset complet
     exit(0);
 }
 
-// ============ WRAPPERS SAFE ============
+// ============ WRAPPERS SAFE (encore plus prudent) ============
 static void* SafeGetLocalPlayer() {
     if (!isFreeFire || !cheatsEnabled) return NULL;
     static void* (*func)() = NULL;
@@ -112,7 +129,7 @@ static void UpdateGame() {
     if (!isFreeFire || !cheatsEnabled) return;
     static int delayCounter = 0;
     delayCounter++;
-    if (delayCounter < 60) return;
+    if (delayCounter < 80) return;   // encore plus de délai pour éviter crash
     
     @autoreleasepool {
         void* localPlayer = SafeGetLocalPlayer();
@@ -230,7 +247,7 @@ static void StartGameLoop() {
 
 @end
 
-// === BOUTON SECRET = ACTIVATE ALL CHEATS ============
+// === BOUTON SECRET = ACTIVATE ALL ============
 @interface SecretButton : UIButton
 @end
 
@@ -266,7 +283,6 @@ static void StartGameLoop() {
         if (!gameTimer) StartGameLoop();
         NSLog(@"👾💻 [XSNPOWWWWWW] TOUS LES CHEATS ACTIVÉS - tu es dans la game");
         
-        // Montre tous les boutons
         for (UIView *btn in allButtons) {
             if (btn != secretButton) btn.hidden = NO;
         }
@@ -275,7 +291,6 @@ static void StartGameLoop() {
         self.backgroundColor = [UIColor colorWithRed:0.0 green:0.6 blue:0.0 alpha:0.85];
         NSLog(@"👾💻 [XSNPOWWWWWW] Cheats désactivés");
         
-        // Cache tous les boutons
         for (UIView *btn in allButtons) {
             if (btn != secretButton) btn.hidden = YES;
         }
@@ -370,7 +385,7 @@ static void CreateUI() {
         
         for (int i = 0; i < 6; i++) {
             DraggableButton *btn = [[DraggableButton alloc] initWithFrame:[positions[i] CGRectValue] title:titles[i] block:selectors[i]];
-            btn.hidden = YES;   // tout caché au début
+            btn.hidden = YES;
             [root.view addSubview:btn];
             [allButtons addObject:btn];
         }
@@ -379,7 +394,7 @@ static void CreateUI() {
         [root.view addSubview:resetBtn];
         [allButtons addObject:resetBtn];
         
-        NSLog(@"✅👾 [XSNPOWWWWWW] MENU chargé - Appuie sur 🔓 quand tu es dans la game");
+        NSLog(@"✅👾 [XSNPOWWWWWW] MENU chargé - Appuie sur 🔓 quand tu es en game");
     });
 }
 
