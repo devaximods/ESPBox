@@ -37,7 +37,6 @@ BOOL espJoystickEnabled = NO;
 }
 %end
 
-// Tout dans UIWindow
 %hook UIWindow
 
 - (void)sendEvent:(UIEvent *)event {
