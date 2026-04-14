@@ -1,368 +1,65 @@
-#import <UIKit/UIKit.h>
-#import <StoreKit/StoreKit.h>
-
-// ============ OFFSETS (remplace par TES valeurs de Bullet Force) ============
-#define OFFSET_GET_LOCAL_PLAYER    0x00000000  // ← À REMPLACER
-#define OFFSET_GET_PLAYERS_LIST    0x00000000  // ← À REMPLACER
-#define OFFSET_GET_POSITION        0x00000000  // ← À REMPLACER
-#define OFFSET_GET_HEALTH          0x00000000  // ← À REMPLACER
-#define OFFSET_GET_TEAM            0x00000000  // ← À REMPLACER
-#define OFFSET_GET_ROTATION        0x00000000  // ← À REMPLACER
-#define OFFSET_SET_ROTATION        0x00000000  // ← À REMPLACER
-#define OFFSET_WORLD_TO_SCREEN     0x00000000  // ← À REMPLACER
-#define OFFSET_CAMERA_GET_MAIN     0x00000000  // ← À REMPLACER
-
-// ============ VARIABLES ============
-BOOL espBoxEnabled = NO;
-BOOL espLineEnabled = NO;
-BOOL espDistanceEnabled = NO;
-BOOL espHealthEnabled = NO;
-BOOL aimbotEnabled = NO;
-
-static NSMutableArray *allContainers = nil;
-static UIButton *secretButton = nil;
-static BOOL switchesHidden = NO;
-static NSTimer *rgbTimer = nil;
-static NSTimer *aimbotTimer = nil;
-
-// ============ STRUCTURES ============
-typedef struct {
-    float x;
-    float y;
-    float z;
-} vec3_t;
-
-// ============ DÉCLARATIONS ANTICIPÉES ============
-static void UpdateAimbot(void);
-static void StartAimbotLoop(void);
-
-// ============ FONCTIONS DE LECTURE MÉMOIRE ============
-static void* GetLocalPlayer() {
-    void* (*func)() = (void* (*)())OFFSET_GET_LOCAL_PLAYER;
-    return func();
-}
-
-static void** GetPlayersList(int *count) {
-    void** (*func)(int*) = (void** (*)(int*))OFFSET_GET_PLAYERS_LIST;
-    return func(count);
-}
-
-static vec3_t GetPosition(void* player) {
-    vec3_t (*func)(void*) = (vec3_t (*)(void*))OFFSET_GET_POSITION;
-    return func(player);
-}
-
-// GetHealth commentée car pas encore utilisée
-// static float GetHealth(void* player) {
-//     float (*func)(void*) = (float (*)(void*))OFFSET_GET_HEALTH;
-//     return func(player);
-// }
-
-static int GetTeam(void* player) {
-    int (*func)(void*) = (int (*)(void*))OFFSET_GET_TEAM;
-    return func(player);
-}
-
-static float GetRotation(void* player) {
-    float (*func)(void*) = (float (*)(void*))OFFSET_GET_ROTATION;
-    return func(player);
-}
-
-static void SetRotation(void* player, float rot) {
-    void (*func)(void*, float) = (void (*)(void*, float))OFFSET_SET_ROTATION;
-    func(player, rot);
-}
-
-// ============ AIMBOT ============
-static void UpdateAimbot() {
-    if (!aimbotEnabled) return;
-    
-    void* localPlayer = GetLocalPlayer();
-    if (!localPlayer) return;
-    
-    vec3_t localPos = GetPosition(localPlayer);
-    int localTeam = GetTeam(localPlayer);
-    
-    int playerCount = 0;
-    void** players = GetPlayersList(&playerCount);
-    if (!players) return;
-    
-    float closestAngle = 360.0f;
-    void* closestEnemy = nil;
-    float currentRot = GetRotation(localPlayer);
-    
-    for (int i = 0; i < playerCount; i++) {
-        void* player = players[i];
-        if (!player || player == localPlayer) continue;
-        
-        int team = GetTeam(player);
-        if (team == localTeam) continue;
-        
-        vec3_t enemyPos = GetPosition(player);
-        
-        float dx = enemyPos.x - localPos.x;
-        float dz = enemyPos.z - localPos.z;
-        float angle = atan2(dz, dx) * 180.0 / M_PI;
-        
-        float angleDiff = fabs(angle - currentRot);
-        if (angleDiff < closestAngle) {
-            closestAngle = angleDiff;
-            closestEnemy = player;
-        }
-    }
-    
-    if (closestEnemy) {
-        vec3_t enemyPos = GetPosition(closestEnemy);
-        float dx = enemyPos.x - localPos.x;
-        float dz = enemyPos.z - localPos.z;
-        float targetAngle = atan2(dz, dx) * 180.0 / M_PI;
-        SetRotation(localPlayer, targetAngle);
-    }
-}
-
-static void StartAimbotLoop() {
-    if (aimbotTimer) [aimbotTimer invalidate];
-    aimbotTimer = [NSTimer scheduledTimerWithTimeInterval:0.05 repeats:YES block:^(NSTimer *timer) {
-        UpdateAimbot();
-    }];
-}
-
-// ============ RGB ANIMATION ============
-static void startRGBAnimation(UIView *view) {
-    if (rgbTimer) [rgbTimer invalidate];
-    rgbTimer = [NSTimer scheduledTimerWithTimeInterval:0.1 repeats:YES block:^(NSTimer *timer) {
-        static int step = 0;
-        step++;
-        CGFloat hue = (step % 360) / 360.0;
-        UIColor *color = [UIColor colorWithHue:hue saturation:1.0 brightness:1.0 alpha:1.0];
-        view.backgroundColor = color;
-    }];
-}
-
-static void stopRGBAnimation(UIView *view) {
-    if (rgbTimer) {
-        [rgbTimer invalidate];
-        rgbTimer = nil;
-    }
-    view.backgroundColor = [UIColor redColor];
-}
-
-// === CLASSE CONTAINER DRAGGABLE ===
-@interface DraggableContainer : UIView
-@property (nonatomic, strong) UISwitch *switchControl;
-@property (nonatomic, strong) UILabel *label;
-@property (nonatomic, strong) UIView *colorView;
-@end
-
-@implementation DraggableContainer
-
-- (instancetype)initWithFrame:(CGRect)frame title:(NSString *)title action:(SEL)action {
-    self = [super initWithFrame:frame];
-    if (self) {
-        self.backgroundColor = [UIColor clearColor];
-        self.userInteractionEnabled = YES;
-        
-        self.colorView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, frame.size.width, frame.size.height)];
-        self.colorView.backgroundColor = [UIColor redColor];
-        self.colorView.layer.cornerRadius = 10;
-        self.colorView.userInteractionEnabled = NO;
-        [self addSubview:self.colorView];
-        
-        self.label = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, frame.size.width, 20)];
-        self.label.text = title;
-        self.label.textColor = [UIColor whiteColor];
-        self.label.font = [UIFont boldSystemFontOfSize:11];
-        self.label.textAlignment = NSTextAlignmentCenter;
-        [self.colorView addSubview:self.label];
-        
-        self.switchControl = [[UISwitch alloc] initWithFrame:CGRectMake(frame.size.width/2 - 25, 22, 50, 35)];
-        self.switchControl.on = NO;
-        [self.switchControl addTarget:nil action:action forControlEvents:UIControlEventValueChanged];
-        [self.colorView addSubview:self.switchControl];
-        
-        UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePan:)];
-        [self addGestureRecognizer:pan];
-    }
-    return self;
-}
-
-- (void)handlePan:(UIPanGestureRecognizer *)gesture {
-    CGPoint translation = [gesture translationInView:self.superview];
-    self.center = CGPointMake(self.center.x + translation.x, self.center.y + translation.y);
-    [gesture setTranslation:CGPointZero inView:self.superview];
-}
-
-- (void)setActive:(BOOL)active {
-    if (active) {
-        startRGBAnimation(self.colorView);
-    } else {
-        stopRGBAnimation(self.colorView);
-    }
-}
-
-- (void)setHidden:(BOOL)hidden {
-    [super setHidden:hidden];
-    self.colorView.hidden = hidden;
-}
-
-@end
-
-// === BOUTON SECRET DRAGGABLE ===
-@interface SecretDraggableButton : UIButton
-@end
-
-@implementation SecretDraggableButton
-
-- (instancetype)initWithFrame:(CGRect)frame {
-    self = [super initWithFrame:frame];
-    if (self) {
-        self.backgroundColor = [UIColor colorWithWhite:0.2 alpha:0.8];
-        self.layer.cornerRadius = frame.size.width / 2;
-        self.titleLabel.font = [UIFont boldSystemFontOfSize:18];
-        [self setTitle:@"🔓" forState:UIControlStateNormal];
-        
-        UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePan:)];
-        [self addGestureRecognizer:pan];
-    }
-    return self;
-}
-
-- (void)handlePan:(UIPanGestureRecognizer *)gesture {
-    CGPoint translation = [gesture translationInView:self.superview];
-    self.center = CGPointMake(self.center.x + translation.x, self.center.y + translation.y);
-    [gesture setTranslation:CGPointZero inView:self.superview];
-}
-
-@end
-
-// === ACTIONS DES SWITCHES ===
-void switchESPBox(UISwitch *sender) {
-    espBoxEnabled = sender.isOn;
-    UIView *container = (UIView *)sender.superview.superview;
-    if ([container isKindOfClass:[DraggableContainer class]]) {
-        [(DraggableContainer *)container setActive:espBoxEnabled];
-    }
-    NSLog(@"ESP BOX: %@", espBoxEnabled ? @"ON ✅" : @"OFF ❌");
-}
-void switchESPLine(UISwitch *sender) {
-    espLineEnabled = sender.isOn;
-    UIView *container = (UIView *)sender.superview.superview;
-    if ([container isKindOfClass:[DraggableContainer class]]) {
-        [(DraggableContainer *)container setActive:espLineEnabled];
-    }
-    NSLog(@"ESP LINE: %@", espLineEnabled ? @"ON ✅" : @"OFF ❌");
-}
-void switchESPDistance(UISwitch *sender) {
-    espDistanceEnabled = sender.isOn;
-    UIView *container = (UIView *)sender.superview.superview;
-    if ([container isKindOfClass:[DraggableContainer class]]) {
-        [(DraggableContainer *)container setActive:espDistanceEnabled];
-    }
-    NSLog(@"ESP DISTANCE: %@", espDistanceEnabled ? @"ON ✅" : @"OFF ❌");
-}
-void switchESPHealth(UISwitch *sender) {
-    espHealthEnabled = sender.isOn;
-    UIView *container = (UIView *)sender.superview.superview;
-    if ([container isKindOfClass:[DraggableContainer class]]) {
-        [(DraggableContainer *)container setActive:espHealthEnabled];
-    }
-    NSLog(@"ESP HEALTH: %@", espHealthEnabled ? @"ON ✅" : @"OFF ❌");
-}
-void switchAimbot(UISwitch *sender) {
-    aimbotEnabled = sender.isOn;
-    UIView *container = (UIView *)sender.superview.superview;
-    if ([container isKindOfClass:[DraggableContainer class]]) {
-        [(DraggableContainer *)container setActive:aimbotEnabled];
-    }
-    if (aimbotEnabled) {
-        StartAimbotLoop();
-    }
-    NSLog(@"AIMBOT: %@", aimbotEnabled ? @"ON ✅" : @"OFF ❌");
-}
-
-// === SECRET MOD ===
-@implementation UIButton (SecretMod)
-
-- (void)toggleSecret {
-    switchesHidden = !switchesHidden;
-    for (DraggableContainer *container in allContainers) {
-        container.hidden = switchesHidden;
-    }
-    if (switchesHidden) {
-        [secretButton setTitle:@"🔐" forState:UIControlStateNormal];
-    } else {
-        [secretButton setTitle:@"🔓" forState:UIControlStateNormal];
-    }
-    NSLog(@"SECRET MOD: %@", switchesHidden ? @"CACHÉ 🔐" : @"VISIBLE 🔓");
-}
-
-@end
-
-// === CRÉATION DE L'UI ===
 static void CreateUI() {
     dispatch_async(dispatch_get_main_queue(), ^{
         UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
         if (!root || !root.view) return;
         
-        allContainers = [NSMutableArray new];
+        allButtons = [NSMutableArray new];
         
-        CGFloat containerW = 100;
-        CGFloat containerH = 70;
-        CGFloat startX = 15;
-        CGFloat startY = 60;
-        CGFloat spacing = 10;
+        CGFloat screenW = [UIScreen mainScreen].bounds.size.width;
+        CGFloat screenH = [UIScreen mainScreen].bounds.size.height;
+        CGFloat btnW = 100;
+        CGFloat btnH = 40;
         
-        // Petit texte XSNPMODZZZ
+        // Petit texte XSNPMODZZZ en haut à gauche
         UILabel *xsnLabel = [[UILabel alloc] initWithFrame:CGRectMake(10, 10, 120, 15)];
         xsnLabel.text = @"XSNPMODZZZ";
         xsnLabel.textColor = [UIColor colorWithRed:0.6 green:0.2 blue:1.0 alpha:0.7];
         xsnLabel.font = [UIFont systemFontOfSize:9];
         [root.view addSubview:xsnLabel];
         
-        // Bouton secret
-        secretButton = [[SecretDraggableButton alloc] initWithFrame:CGRectMake([UIScreen mainScreen].bounds.size.width - 50, 40, 40, 40)];
-        [secretButton addTarget:secretButton action:@selector(toggleSecret) forControlEvents:UIControlEventTouchUpInside];
+        // Bouton secret en haut à droite
+        secretButton = [[SecretButton alloc] initWithFrame:CGRectMake(screenW - 50, 45, 40, 40)];
+        [secretButton addTarget:nil action:@selector(toggleSecret) forControlEvents:UIControlEventTouchUpInside];
         [root.view addSubview:secretButton];
         
-        // Ligne 1
-        DraggableContainer *c1 = [[DraggableContainer alloc] initWithFrame:CGRectMake(startX, startY, containerW, containerH) title:@"ESP BOX" action:@selector(switchESPBox:)];
-        [root.view addSubview:c1];
-        [allContainers addObject:c1];
+        // === BOUTONS DISPERSÉS ===
         
-        DraggableContainer *c2 = [[DraggableContainer alloc] initWithFrame:CGRectMake(startX + containerW + spacing, startY, containerW, containerH) title:@"ESP LINE" action:@selector(switchESPLine:)];
-        [root.view addSubview:c2];
-        [allContainers addObject:c2];
+        // ESP BOX - en haut au milieu
+        DraggableButton *btn1 = [[DraggableButton alloc] initWithFrame:CGRectMake(screenW/2 - btnW/2, 100, btnW, btnH) title:@"ESP BOX"];
+        [btn1 addTarget:nil action:@selector(toggleESPBox) forControlEvents:UIControlEventTouchUpInside];
+        [root.view addSubview:btn1];
+        [allButtons addObject:btn1];
         
-        // Ligne 2
-        CGFloat startY2 = startY + containerH + spacing;
+        // ESP LINE - à gauche, un peu plus bas
+        DraggableButton *btn2 = [[DraggableButton alloc] initWithFrame:CGRectMake(20, 180, btnW, btnH) title:@"ESP LINE"];
+        [btn2 addTarget:nil action:@selector(toggleESPLine) forControlEvents:UIControlEventTouchUpInside];
+        [root.view addSubview:btn2];
+        [allButtons addObject:btn2];
         
-        DraggableContainer *c3 = [[DraggableContainer alloc] initWithFrame:CGRectMake(startX, startY2, containerW, containerH) title:@"ESP DIST" action:@selector(switchESPDistance:)];
-        [root.view addSubview:c3];
-        [allContainers addObject:c3];
+        // ESP DIST - à droite, un peu plus bas
+        DraggableButton *btn3 = [[DraggableButton alloc] initWithFrame:CGRectMake(screenW - btnW - 20, 180, btnW, btnH) title:@"ESP DIST"];
+        [btn3 addTarget:nil action:@selector(toggleESPDistance) forControlEvents:UIControlEventTouchUpInside];
+        [root.view addSubview:btn3];
+        [allButtons addObject:btn3];
         
-        DraggableContainer *c4 = [[DraggableContainer alloc] initWithFrame:CGRectMake(startX + containerW + spacing, startY2, containerW, containerH) title:@"ESP HEALTH" action:@selector(switchESPHealth:)];
-        [root.view addSubview:c4];
-        [allContainers addObject:c4];
+        // ESP HEALTH - au milieu, plus bas
+        DraggableButton *btn4 = [[DraggableButton alloc] initWithFrame:CGRectMake(screenW/2 - btnW/2, 270, btnW, btnH) title:@"ESP HEALTH"];
+        [btn4 addTarget:nil action:@selector(toggleESPHealth) forControlEvents:UIControlEventTouchUpInside];
+        [root.view addSubview:btn4];
+        [allButtons addObject:btn4];
         
-        // Ligne 3
-        CGFloat startY3 = startY2 + containerH + spacing;
+        // AIMBOT - à gauche, en bas
+        DraggableButton *btn5 = [[DraggableButton alloc] initWithFrame:CGRectMake(20, screenH - 100, btnW, btnH) title:@"AIMBOT"];
+        [btn5 addTarget:nil action:@selector(toggleAimbot) forControlEvents:UIControlEventTouchUpInside];
+        [root.view addSubview:btn5];
+        [allButtons addObject:btn5];
         
-        DraggableContainer *c5 = [[DraggableContainer alloc] initWithFrame:CGRectMake(startX, startY3, containerW, containerH) title:@"AIMBOT" action:@selector(switchAimbot:)];
-        [root.view addSubview:c5];
-        [allContainers addObject:c5];
+        // SPINBOT - à droite, en bas
+        DraggableButton *btn6 = [[DraggableButton alloc] initWithFrame:CGRectMake(screenW - btnW - 20, screenH - 100, btnW, btnH) title:@"SPINBOT"];
+        [btn6 addTarget:nil action:@selector(toggleSpinbot) forControlEvents:UIControlEventTouchUpInside];
+        [root.view addSubview:btn6];
+        [allButtons addObject:btn6];
         
-        NSLog(@"✅ UI créée : ESP BOX, LINE, DIST, HEALTH, AIMBOT");
+        NSLog(@"✅ UI créée : 6 boutons dispersés");
     });
 }
-
-%ctor {
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1.5 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-        CreateUI();
-    });
-}
-
-%hook SKPaymentQueue
-- (void)addPayment:(SKPayment *)payment {
-    %orig;
-}
-%end
