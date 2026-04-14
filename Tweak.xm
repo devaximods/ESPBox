@@ -12,7 +12,7 @@
 #define OFFSET_WORLD_TO_SCREEN     0x84E6A54
 #define OFFSET_CAMERA_GET_MAIN     0x84E7148
 
-// ============ VARIABLES (boutons 100% intacts) ============
+// ============ VARIABLES ============
 BOOL espBoxEnabled = NO;
 BOOL espLineEnabled = NO;
 BOOL espDistanceEnabled = NO;
@@ -25,14 +25,13 @@ static UIButton *secretButton = nil;
 static __unused BOOL buttonsHidden = NO;
 static NSTimer *gameTimer = nil;
 
-// Flag pour savoir si on est dans Free Fire (évite crash sur Wallpaper)
 static BOOL isFreeFire = NO;
 
 // ============ STRUCTURES ============
 typedef struct { float x; float y; float z; } vec3_t;
 typedef struct { float x; float y; float z; float w; } quaternion_t;
 
-// ============ WRAPPERS ULTRA SAFE (protège tout) ============
+// ============ WRAPPERS SAFE ============
 static void* SafeGetLocalPlayer() {
     if (!isFreeFire) return NULL;
     static void* (*func)() = NULL;
@@ -75,18 +74,23 @@ static void SafeSetRotationQuat(void* player, quaternion_t rot) {
     if (func) func(player, rot);
 }
 
-// Math functions identiques
 static float QuaternionToYaw(quaternion_t q) {
     float yaw = atan2(2.0f * (q.y * q.w + q.x * q.z), 1.0f - 2.0f * (q.y * q.y + q.x * q.x));
     return yaw * 180.0f / M_PI;
 }
 
 static quaternion_t YawToQuaternion(float yaw) {
-    quaternion_t q = {0, sin(yaw * M_PI / 360.0f), 0, cos(yaw * M_PI / 360.0f)};
+    float rad = yaw * M_PI / 180.0f;
+    float halfRad = rad / 2.0f;
+    quaternion_t q;
+    q.x = 0.0f;
+    q.y = (float)sin(halfRad);
+    q.z = 0.0f;
+    q.w = (float)cos(halfRad);
     return q;
 }
 
-// ============ UPDATE GAME (seulement si Free Fire) ============
+// ============ UPDATE GAME ============
 static void UpdateGame() {
     if (!isFreeFire) return;
     @autoreleasepool {
@@ -146,19 +150,20 @@ static void StartGameLoop() {
     }];
 }
 
-// === BOUTON DRAGGABLE (100% TON CODE ORIGINAL - AUCUNE MODIF) ===
+// === BOUTON DRAGGABLE (100% TON CODE ORIGINAL) ===
 @interface DraggableButton : UIButton
 @property (nonatomic, assign) BOOL isActive;
 @property (nonatomic, copy) void (^toggleBlock)(void);
 @end
 
 @implementation DraggableButton
-// ... (exactement le même code que dans ta version originale, je ne recopie pas tout pour ne pas allonger, mais il est identique)
+
 - (instancetype)initWithFrame:(CGRect)frame title:(NSString *)title block:(void (^)(void))block {
     self = [super initWithFrame:frame];
     if (self) {
         self.toggleBlock = block;
         self.isActive = NO;
+        
         [self setTitle:title forState:UIControlStateNormal];
         [self setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
         self.titleLabel.font = [UIFont boldSystemFontOfSize:11];
@@ -166,13 +171,43 @@ static void StartGameLoop() {
         self.layer.cornerRadius = 12;
         self.layer.borderWidth = 1;
         self.layer.borderColor = [UIColor whiteColor].CGColor;
+        
         [self addTarget:self action:@selector(buttonTapped) forControlEvents:UIControlEventTouchUpInside];
+        
         UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePan:)];
         [self addGestureRecognizer:pan];
     }
     return self;
 }
-// ... (le reste du DraggableButton est exactement comme avant)
+
+- (void)buttonTapped {
+    if (self.toggleBlock) self.toggleBlock();
+    [UIView animateWithDuration:0.1 animations:^{
+        self.transform = CGAffineTransformMakeScale(0.95, 0.95);
+    } completion:^(BOOL finished) {
+        [UIView animateWithDuration:0.1 animations:^{
+            self.transform = CGAffineTransformIdentity;
+        }];
+    }];
+}
+
+- (void)handlePan:(UIPanGestureRecognizer *)gesture {
+    CGPoint translation = [gesture translationInView:self.superview];
+    self.center = CGPointMake(self.center.x + translation.x, self.center.y + translation.y);
+    [gesture setTranslation:CGPointZero inView:self.superview];
+}
+
+- (void)setActive:(BOOL)active {
+    _isActive = active;
+    if (active) {
+        self.backgroundColor = [UIColor colorWithRed:0.2 green:0.8 blue:0.2 alpha:0.9];
+        self.layer.borderColor = [UIColor greenColor].CGColor;
+    } else {
+        self.backgroundColor = [UIColor colorWithRed:1.0 green:0.2 blue:0.2 alpha:0.85];
+        self.layer.borderColor = [UIColor whiteColor].CGColor;
+    }
+}
+
 @end
 
 // === BOUTON SECRET (100% TON CODE ORIGINAL) ===
@@ -180,7 +215,34 @@ static void StartGameLoop() {
 @end
 
 @implementation SecretButton
-// ... (exactement comme dans ton code original)
+
+- (instancetype)initWithFrame:(CGRect)frame {
+    self = [super initWithFrame:frame];
+    if (self) {
+        self.backgroundColor = [UIColor colorWithWhite:0.2 alpha:0.8];
+        self.layer.cornerRadius = frame.size.width / 2;
+        self.titleLabel.font = [UIFont boldSystemFontOfSize:18];
+        [self setTitle:@"🔓" forState:UIControlStateNormal];
+        [self addTarget:self action:@selector(toggleSecret) forControlEvents:UIControlEventTouchUpInside];
+        
+        UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePan:)];
+        [self addGestureRecognizer:pan];
+    }
+    return self;
+}
+
+- (void)handlePan:(UIPanGestureRecognizer *)gesture {
+    CGPoint translation = [gesture translationInView:self.superview];
+    self.center = CGPointMake(self.center.x + translation.x, self.center.y + translation.y);
+    [gesture setTranslation:CGPointZero inView:self.superview];
+}
+
+- (void)toggleSecret {
+    buttonsHidden = !buttonsHidden;
+    for (UIView *btn in allButtons) btn.hidden = buttonsHidden;
+    [self setTitle:buttonsHidden ? @"🔐" : @"🔓" forState:UIControlStateNormal];
+}
+
 @end
 
 // === ACTIONS (identiques) ===
@@ -191,16 +253,16 @@ void updateESPHealth() { espHealthEnabled = !espHealthEnabled; }
 void updateAimbot() { aimbotEnabled = !aimbotEnabled; if (!gameTimer) StartGameLoop(); }
 void updateSpinbot() { spinbotEnabled = !spinbotEnabled; if (spinbotEnabled && aimbotEnabled) aimbotEnabled = NO; if (!gameTimer) StartGameLoop(); }
 
-// === CRÉATION DE L'UI (delay 4s + détection Free Fire) ===
+// === CRÉATION DE L'UI ===
 static void CreateUI() {
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 4 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
         NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
-        if ([bundleID containsString:@"garena"] || [bundleID containsString:@"freefire"]) {
-            isFreeFire = YES;
-            NSLog(@"👾💻 [XSNPOWWWWWW] Free Fire détecté → memory hacks activés");
+        isFreeFire = [bundleID containsString:@"garena"] || [bundleID containsString:@"freefire"];
+        
+        if (isFreeFire) {
+            NSLog(@"👾💻 [XSNPOWWWWWW] Free Fire détecté → hacks activés");
         } else {
-            isFreeFire = NO;
-            NSLog(@"👾💻 [XSNPOWWWWWW] App non-FreeFire → memory hacks désactivés pour éviter crash");
+            NSLog(@"👾💻 [XSNPOWWWWWW] App non-FreeFire → memory hacks désactivés (pas de crash)");
         }
         
         UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
@@ -244,7 +306,7 @@ static void CreateUI() {
         }
         
         if (isFreeFire) StartGameLoop();
-        NSLog(@"✅👾 [XSNPOWWWWWW] MENU VISIBLE - Test terminé sur %@", bundleID);
+        NSLog(@"✅👾 [XSNPOWWWWWW] MENU VISIBLE - Build corrigé");
     });
 }
 
