@@ -1,9 +1,9 @@
-// Tweak.xm - MENU FLOTTANT SIMPLE ET STYLÉ GRIS TRANSPARENT
+// Tweak.xm - MENU FLOTTANT GRIS TRANSPARENT SIMPLE - SEULEMENT ESP
 
 #import <UIKit/UIKit.h>
 #import <StoreKit/StoreKit.h>
 
-// Variables
+// Variables ESP seulement
 BOOL espBoxEnabled = NO;
 BOOL espLineEnabled = NO;
 BOOL espDistanceEnabled = NO;
@@ -38,16 +38,17 @@ BOOL espJoystickEnabled = NO;
 }
 
 - (void)openMenu {
-    UIView *panel = [[UIView alloc] initWithFrame:CGRectMake(30, 120, 300, 380)];
-    panel.backgroundColor = [UIColor colorWithRed:0.13 green:0.13 blue:0.16 alpha:0.92];
-    panel.layer.cornerRadius = 20;
+    CGFloat w = [[UIScreen mainScreen] bounds].size.width;
+    UIView *panel = [[UIView alloc] initWithFrame:CGRectMake(30, 120, w - 60, 380)];
+    panel.backgroundColor = [UIColor colorWithRed:0.13 green:0.13 blue:0.16 alpha:0.93];
+    panel.layer.cornerRadius = 22;
     panel.layer.borderWidth = 2;
     panel.layer.borderColor = [UIColor colorWithRed:0.7 green:0.7 blue:0.75 alpha:1.0].CGColor;
     
-    UILabel *title = [[UILabel alloc] initWithFrame:CGRectMake(0, 15, 300, 40)];
+    UILabel *title = [[UILabel alloc] initWithFrame:CGRectMake(0, 15, panel.frame.size.width, 45)];
     title.text = @"XSNPMODZ";
     title.textColor = [UIColor whiteColor];
-    title.font = [UIFont boldSystemFontOfSize:24];
+    title.font = [UIFont boldSystemFontOfSize:26];
     title.textAlignment = NSTextAlignmentCenter;
     [panel addSubview:title];
     
@@ -58,13 +59,13 @@ BOOL espJoystickEnabled = NO;
     [self addSwitch:@"ESP SKELETON" to:panel y:230 var:&espSkeletonEnabled];
     [self addSwitch:@"JOYSTICK PLAYER" to:panel y:270 var:&espJoystickEnabled];
     
-    UIButton *close = [UIButton buttonWithType:UIButtonTypeSystem];
-    close.frame = CGRectMake(20, 320, 260, 50);
-    [close setTitle:@"CLOSE" forState:UIControlStateNormal];
-    close.backgroundColor = [UIColor greenColor];
-    close.layer.cornerRadius = 12;
-    [close addTarget:panel action:@selector(removeFromSuperview) forControlEvents:UIControlEventTouchUpInside];
-    [panel addSubview:close];
+    UIButton *closeBtn = [UIButton buttonWithType:UIButtonTypeSystem];
+    closeBtn.frame = CGRectMake(30, 320, panel.frame.size.width - 60, 50);
+    [closeBtn setTitle:@"CLOSE MENU" forState:UIControlStateNormal];
+    closeBtn.backgroundColor = [UIColor colorWithRed:0.2 green:0.8 blue:0.2 alpha:1.0];
+    closeBtn.layer.cornerRadius = 14;
+    [closeBtn addTarget:panel action:@selector(removeFromSuperview) forControlEvents:UIControlEventTouchUpInside];
+    [panel addSubview:closeBtn];
     
     UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:panel action:@selector(handlePan:)];
     [panel addGestureRecognizer:pan];
@@ -74,12 +75,12 @@ BOOL espJoystickEnabled = NO;
 }
 
 - (void)addSwitch:(NSString *)label to:(UIView *)panel y:(CGFloat)y var:(BOOL *)var {
-    UILabel *lbl = [[UILabel alloc] initWithFrame:CGRectMake(20, y, 200, 35)];
+    UILabel *lbl = [[UILabel alloc] initWithFrame:CGRectMake(25, y, 200, 40)];
     lbl.text = label;
     lbl.textColor = [UIColor whiteColor];
     [panel addSubview:lbl];
     
-    UISwitch *sw = [[UISwitch alloc] initWithFrame:CGRectMake(220, y + 4, 60, 30)];
+    UISwitch *sw = [[UISwitch alloc] initWithFrame:CGRectMake(panel.frame.size.width - 95, y + 6, 70, 35)];
     sw.on = *var;
     [panel addSubview:sw];
 }
@@ -100,7 +101,7 @@ FloatingButton *floatingBtn = nil;
             UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
             if (root && root.view) {
                 [root.view addSubview:floatingBtn];
-                NSLog(@"[XSNPMODZ] 🔥 Bouton flottant + panneau gris injecté");
+                NSLog(@"[XSNPMODZ] 🔥 Bouton flottant + panneau gris stylé injecté");
             }
         }
     });
@@ -108,7 +109,6 @@ FloatingButton *floatingBtn = nil;
 
 %hook SKPaymentQueue
 - (void)addPayment:(SKPayment *)payment {
-    if (ppxEnabled) return; // ppxEnabled n'est pas défini ici, mais tu peux l'ajouter si besoin
-    %orig;
+    %orig;  // PPX enlevé pour éviter les erreurs
 }
 %end
