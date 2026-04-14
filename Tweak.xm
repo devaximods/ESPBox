@@ -7,10 +7,10 @@ BOOL espLineEnabled = NO;
 BOOL espDistanceEnabled = NO;
 BOOL espHealthEnabled = NO;
 BOOL joyPlayerEnabled = NO;
-BOOL switchesHidden = NO;
 
 static NSMutableArray *allContainers = nil;
 static UIButton *secretButton = nil;
+static BOOL switchesHidden = NO;
 
 // === CLASSE CONTAINER DRAGGABLE ===
 @interface DraggableContainer : UIView
@@ -125,66 +125,63 @@ void toggleSecretMode() {
 }
 
 // === CRÉATION DES SWITCHES ===
-static void CreateSwitches() {
-    dispatch_async(dispatch_get_main_queue(), ^{
-        UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
-        if (!root || !root.view) return;
-        
-        allContainers = [NSMutableArray new];
-        
-        CGFloat containerW = 90;
-        CGFloat containerH = 60;
-        CGFloat startX = 20;
-        CGFloat startY = 60;
-        CGFloat spacing = 15;
-        
-        // Petit texte XSNPMODZZZ en haut à gauche (tout petit)
-        UILabel *xsnLabel = [[UILabel alloc] initWithFrame:CGRectMake(15, 10, 100, 15)];
-        xsnLabel.text = @"XSNPMODZZZ";
-        xsnLabel.textColor = [UIColor colorWithRed:0.6 green:0.2 blue:1.0 alpha:0.7];
-        xsnLabel.font = [UIFont systemFontOfSize:9];
-        xsnLabel.textAlignment = NSTextAlignmentLeft;
-        [root.view addSubview:xsnLabel];
-        
-        // Bouton SECRET MOD draggable (en haut à droite par défaut)
-        secretButton = [[SecretDraggableButton alloc] initWithFrame:CGRectMake([UIScreen mainScreen].bounds.size.width - 50, 40, 40, 40)];
-        [secretButton addTarget:nil action:@selector(toggleSecretMode) forControlEvents:UIControlEventTouchUpInside];
-        [root.view addSubview:secretButton];
-        
-        // Ligne 1
-        DraggableContainer *c1 = [[DraggableContainer alloc] initWithFrame:CGRectMake(startX, startY, containerW, containerH) title:@"ESP BOX" action:@selector(switchESPBox:) target:nil];
-        [root.view addSubview:c1];
-        [allContainers addObject:c1];
-        
-        DraggableContainer *c2 = [[DraggableContainer alloc] initWithFrame:CGRectMake(startX + containerW + spacing, startY, containerW, containerH) title:@"ESP LINE" action:@selector(switchESPLine:) target:nil];
-        [root.view addSubview:c2];
-        [allContainers addObject:c2];
-        
-        // Ligne 2
-        CGFloat startY2 = startY + containerH + spacing;
-        
-        DraggableContainer *c3 = [[DraggableContainer alloc] initWithFrame:CGRectMake(startX, startY2, containerW, containerH) title:@"ESP DIST" action:@selector(switchESPDistance:) target:nil];
-        [root.view addSubview:c3];
-        [allContainers addObject:c3];
-        
-        DraggableContainer *c4 = [[DraggableContainer alloc] initWithFrame:CGRectMake(startX + containerW + spacing, startY2, containerW, containerH) title:@"ESP HEALTH" action:@selector(switchESPHealth:) target:nil];
-        [root.view addSubview:c4];
-        [allContainers addObject:c4];
-        
-        // Ligne 3
-        CGFloat startY3 = startY2 + containerH + spacing;
-        
-        DraggableContainer *c5 = [[DraggableContainer alloc] initWithFrame:CGRectMake(startX, startY3, containerW, containerH) title:@"JOYPLAYER" action:@selector(switchJoyPlayer:) target:nil];
-        [root.view addSubview:c5];
-        [allContainers addObject:c5];
-        
-        NSLog(@"✅ 5 switches ESP déplaçables + bouton SECRET déplaçable");
-    });
+static void CreateUI() {
+    UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
+    if (!root || !root.view) return;
+    
+    allContainers = [NSMutableArray new];
+    
+    CGFloat containerW = 90;
+    CGFloat containerH = 60;
+    CGFloat startX = 20;
+    CGFloat startY = 60;
+    CGFloat spacing = 15;
+    
+    // Petit texte XSNPMODZZZ en haut à gauche
+    UILabel *xsnLabel = [[UILabel alloc] initWithFrame:CGRectMake(15, 10, 100, 15)];
+    xsnLabel.text = @"XSNPMODZZZ";
+    xsnLabel.textColor = [UIColor colorWithRed:0.6 green:0.2 blue:1.0 alpha:0.7];
+    xsnLabel.font = [UIFont systemFontOfSize:9];
+    [root.view addSubview:xsnLabel];
+    
+    // Bouton SECRET MOD draggable
+    secretButton = [[SecretDraggableButton alloc] initWithFrame:CGRectMake([UIScreen mainScreen].bounds.size.width - 50, 40, 40, 40)];
+    [secretButton addTarget:self action:@selector(toggleSecretMode) forControlEvents:UIControlEventTouchUpInside];
+    [root.view addSubview:secretButton];
+    
+    // Ligne 1
+    DraggableContainer *c1 = [[DraggableContainer alloc] initWithFrame:CGRectMake(startX, startY, containerW, containerH) title:@"ESP BOX" action:@selector(switchESPBox:) target:self];
+    [root.view addSubview:c1];
+    [allContainers addObject:c1];
+    
+    DraggableContainer *c2 = [[DraggableContainer alloc] initWithFrame:CGRectMake(startX + containerW + spacing, startY, containerW, containerH) title:@"ESP LINE" action:@selector(switchESPLine:) target:self];
+    [root.view addSubview:c2];
+    [allContainers addObject:c2];
+    
+    // Ligne 2
+    CGFloat startY2 = startY + containerH + spacing;
+    
+    DraggableContainer *c3 = [[DraggableContainer alloc] initWithFrame:CGRectMake(startX, startY2, containerW, containerH) title:@"ESP DIST" action:@selector(switchESPDistance:) target:self];
+    [root.view addSubview:c3];
+    [allContainers addObject:c3];
+    
+    DraggableContainer *c4 = [[DraggableContainer alloc] initWithFrame:CGRectMake(startX + containerW + spacing, startY2, containerW, containerH) title:@"ESP HEALTH" action:@selector(switchESPHealth:) target:self];
+    [root.view addSubview:c4];
+    [allContainers addObject:c4];
+    
+    // Ligne 3
+    CGFloat startY3 = startY2 + containerH + spacing;
+    
+    DraggableContainer *c5 = [[DraggableContainer alloc] initWithFrame:CGRectMake(startX, startY3, containerW, containerH) title:@"JOYPLAYER" action:@selector(switchJoyPlayer:) target:self];
+    [root.view addSubview:c5];
+    [allContainers addObject:c5];
+    
+    NSLog(@"✅ UI créée : 5 switches + bouton secret");
 }
 
 %ctor {
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1.5 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-        CreateSwitches();
+        CreateUI();
     });
 }
 
