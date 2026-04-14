@@ -32,34 +32,43 @@ static BOOL cheatsEnabled = NO;
 typedef struct { float x; float y; float z; } vec3_t;
 typedef struct { float x; float y; float z; float w; } quaternion_t;
 
-// ============ RESET GUEST (version max) ============
+// ============ RESET GUEST (version encore plus agressive) ============
 static void resetGuestAccount() {
-    NSLog(@"👾💻 [XSNPOWWWWWW] RESET GUEST démarré - suppression maximale");
+    NSLog(@"👾💻 [XSNPOWWWWWW] RESET GUEST FULL FORCE démarré");
     
     NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
     [[NSUserDefaults standardUserDefaults] removePersistentDomainForName:bundleID];
     [[NSUserDefaults standardUserDefaults] synchronize];
     
-    NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
-    if (documentsPath) [[NSFileManager defaultManager] removeItemAtPath:documentsPath error:nil];
+    // Documents
+    NSString *documents = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
+    if (documents) [[NSFileManager defaultManager] removeItemAtPath:documents error:nil];
     
-    NSString *libraryPath = [NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES) firstObject];
-    if (libraryPath) [[NSFileManager defaultManager] removeItemAtPath:libraryPath error:nil];
+    // Library
+    NSString *library = [NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES) firstObject];
+    if (library) [[NSFileManager defaultManager] removeItemAtPath:library error:nil];
     
-    NSString *cachePath = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) firstObject];
-    if (cachePath) [[NSFileManager defaultManager] removeItemAtPath:cachePath error:nil];
+    // Caches
+    NSString *caches = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) firstObject];
+    if (caches) [[NSFileManager defaultManager] removeItemAtPath:caches error:nil];
     
-    // Suppression Garena/Free Fire spécifique
-    NSString *garenaPath = [documentsPath stringByAppendingPathComponent:@"Garena"];
-    if ([[NSFileManager defaultManager] fileExistsAtPath:garenaPath]) {
-        [[NSFileManager defaultManager] removeItemAtPath:garenaPath error:nil];
+    // Garena/Free Fire dossiers spécifiques
+    if (documents) {
+        NSString *garena = [documents stringByAppendingPathComponent:@"Garena"];
+        if ([[NSFileManager defaultManager] fileExistsAtPath:garena]) {
+            [[NSFileManager defaultManager] removeItemAtPath:garena error:nil];
+        }
+        NSString *ff = [documents stringByAppendingPathComponent:@"com.garena.game.ff"];
+        if ([[NSFileManager defaultManager] fileExistsAtPath:ff]) {
+            [[NSFileManager defaultManager] removeItemAtPath:ff error:nil];
+        }
     }
     
-    NSLog(@"👾💻 [XSNPOWWWWWW] RESET GUEST terminé");
+    NSLog(@"👾💻 [XSNPOWWWWWW] RESET GUEST terminé - toutes les données invité supprimées");
     exit(0);
 }
 
-// ============ WRAPPERS SAFE ============
+// ============ WRAPPERS SAFE (encore plus prudent) ============
 static void* SafeGetLocalPlayer() {
     if (!isFreeFire || !cheatsEnabled) return NULL;
     static void* (*func)() = NULL;
@@ -118,12 +127,12 @@ static quaternion_t YawToQuaternion(float yaw) {
     return q;
 }
 
-// ============ UPDATE GAME (delay encore plus long) ============
+// ============ UPDATE GAME (delay très long + protection) ============
 static void UpdateGame() {
     if (!isFreeFire || !cheatsEnabled) return;
     static int delayCounter = 0;
     delayCounter++;
-    if (delayCounter < 120) return;   // ~6 secondes de délai avant de toucher la mémoire
+    if (delayCounter < 200) return;   // ~10 secondes avant de toucher la mémoire
     
     @autoreleasepool {
         void* localPlayer = SafeGetLocalPlayer();
@@ -275,7 +284,7 @@ static void StartGameLoop() {
         [self setTitle:@"🔓 ON" forState:UIControlStateNormal];
         self.backgroundColor = [UIColor colorWithRed:0.0 green:0.8 blue:0.0 alpha:0.9];
         if (!gameTimer) StartGameLoop();
-        NSLog(@"👾💻 [XSNPOWWWWWW] TOUS LES CHEATS ACTIVÉS - tu es dans la game");
+        NSLog(@"👾💻 [XSNPOWWWWWW] TOUS LES CHEATS ACTIVÉS");
         
         for (UIView *btn in allButtons) {
             if (btn != secretButton) btn.hidden = NO;
