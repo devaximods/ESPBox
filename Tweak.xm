@@ -1,7 +1,7 @@
 #import <UIKit/UIKit.h>
 #import <StoreKit/StoreKit.h>
 
-// ============ NOUVEAUX OFFSETS (Bullet Force) ============
+// ============ OFFSETS (Bullet Force) ============
 #define OFFSET_GET_LOCAL_PLAYER    0x334B268
 #define OFFSET_GET_PLAYERS_LIST    0x5D70930
 #define OFFSET_GET_TEAM            0x3D496E0
@@ -24,14 +24,14 @@ BOOL spinbotEnabled = NO;
 static NSMutableArray *allButtons = nil;
 static UIButton *secretButton = nil;
 static NSTimer *gameTimer = nil;
-
 static BOOL isGameReady = NO;
+static UIView *espContainer = nil;
 
 // ============ STRUCTURES ============
 typedef struct { float x; float y; float z; } vec3_t;
 typedef struct { float x; float y; float z; float w; } quaternion_t;
 
-// ============ FONCTIONS DE LECTURE MÉMOIRE ============
+// ============ FONCTIONS MÉMOIRE ============
 static void* GetLocalPlayer() {
     void* (*func)() = (void* (*)())OFFSET_GET_LOCAL_PLAYER;
     return func ? func() : NULL;
@@ -58,12 +58,6 @@ static int GetTeam(void* player) {
     int (*func)(void*) = (int (*)(void*))OFFSET_GET_TEAM;
     return func ? func(player) : 0;
 }
-
-// GetHealth commentée (pas utilisée)
-// static float GetHealth(void* player) {
-//     float (*func)(void*) = (float (*)(void*))OFFSET_GET_HEALTH;
-//     return func ? func(player) : 0;
-// }
 
 static quaternion_t GetRotationQuat(void* player) {
     void* transform = GetTransform(player);
@@ -95,20 +89,100 @@ static quaternion_t YawToQuaternion(float yaw) {
     return q;
 }
 
-// ============ CAMERA (commentée car pas utilisée) ============
-// static void* GetMainCamera() {
-//     void* (*func)() = (void* (*)())OFFSET_CAMERA_GET_MAIN;
-//     return func ? func() : NULL;
-// }
-// 
-// static vec3_t WorldToScreenPoint(vec3_t worldPos) {
-//     vec3_t (*func)(void*, vec3_t) = (vec3_t (*)(void*, vec3_t))OFFSET_WORLD_TO_SCREEN;
-//     void* camera = GetMainCamera();
-//     if (!camera) return (vec3_t){0,0,0};
-//     return func ? func(camera, worldPos) : (vec3_t){0,0,0};
-// }
+// ============ CAMERA & ESP ============
+static void* GetMainCamera() {
+    void* (*func)() = (void* (*)())OFFSET_CAMERA_GET_MAIN;
+    return func ? func() : NULL;
+}
 
-// ============ UPDATE GAME ============
+static CGPoint WorldToScreen(vec3_t worldPos, CGSize screenSize) {
+    vec3_t (*func)(void*, vec3_t) = (vec3_t (*)(void*, vec3_t))OFFSET_WORLD_TO_SCREEN;
+    void* camera = GetMainCamera();
+    if (!camera) return CGPointMake(-1, -1);
+    vec3_t result = func(camera, worldPos);
+    return CGPointMake(result.x, result.y);
+}
+
+static void SetupESP() {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UIWindow *keyWindow = [UIApplication sharedApplication].keyWindow;
+        if (!keyWindow) return;
+        
+        if (!espContainer) {
+            espContainer = [[UIView alloc] initWithFrame:keyWindow.bounds];
+            espContainer.backgroundColor = [UIColor clearColor];
+            espContainer.userInteractionEnabled = NO;
+            [keyWindow addSubview:espContainer];
+        }
+    });
+}
+
+static void ClearESP() {
+    if (!espContainer) return;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        for (UIView *subview in espContainer.subviews) {
+            [subview removeFromSuperview];
+        }
+    });
+}
+
+static void DrawBox(CGPoint center, float distance) {
+    if (!espContainer) return;
+    
+    float size = 60.0f / distance;
+    if (size < 10) size = 10;
+    if (size > 50) size = 50;
+    
+    CGRect rect = CGRectMake(center.x - size/2, center.y - size, size, size);
+    
+    UIView *box = [[UIView alloc] initWithFrame:rect];
+    box.backgroundColor = [UIColor clearColor];
+    box.layer.borderWidth = 2;
+    box.layer.borderColor = [UIColor redColor].CGColor;
+    box.tag = 999;
+    
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [espContainer addSubview:box];
+    });
+}
+
+static void DrawLine(CGPoint from, CGPoint to) {
+    // À implémenter
+}
+
+static void DrawDistance(CGPoint pos, float distance) {
+    if (!espContainer) return;
+    
+    UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(pos.x - 20, pos.y - 25, 40, 15)];
+    label.text = [NSString stringWithFormat:@"%.0fm", distance];
+    label.textColor = [UIColor yellowColor];
+    label.font = [UIFont systemFontOfSize:10];
+    label.backgroundColor = [UIColor colorWithWhite:0 alpha:0.5];
+    label.textAlignment = NSTextAlignmentCenter;
+    label.tag = 999;
+    
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [espContainer addSubview:label];
+    });
+}
+
+static void DrawHealth(CGPoint pos, float health) {
+    if (!espContainer) return;
+    
+    UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(pos.x - 15, pos.y + 10, 30, 12)];
+    label.text = [NSString stringWithFormat:@"%.0f", health];
+    label.textColor = [UIColor greenColor];
+    label.font = [UIFont systemFontOfSize:9];
+    label.backgroundColor = [UIColor colorWithWhite:0 alpha:0.5];
+    label.textAlignment = NSTextAlignmentCenter;
+    label.tag = 999;
+    
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [espContainer addSubview:label];
+    });
+}
+
+// ============ UPDATE GAME AVEC ESP ============
 static void UpdateGame() {
     if (!isGameReady) return;
     
@@ -159,6 +233,42 @@ static void UpdateGame() {
             if (found) {
                 float targetYaw = atan2(closestEnemyPos.z - localPos.z, closestEnemyPos.x - localPos.x) * 180.0f / M_PI;
                 SetRotationQuat(localPlayer, YawToQuaternion(targetYaw));
+            }
+        }
+        
+        // ============ ESP ============
+        if (espBoxEnabled || espLineEnabled || espDistanceEnabled || espHealthEnabled) {
+            ClearESP();
+            
+            int playerCount = 0;
+            void** players = GetPlayersList(&playerCount);
+            if (!players) return;
+            
+            vec3_t localPos = GetPosition(localPlayer);
+            int localTeam = GetTeam(localPlayer);
+            CGSize screenSize = [UIScreen mainScreen].bounds.size;
+            
+            for (int i = 0; i < playerCount && i < 50; i++) {
+                void* player = players[i];
+                if (!player || player == localPlayer) continue;
+                if (GetTeam(player) == localTeam) continue;
+                
+                vec3_t enemyPos = GetPosition(player);
+                float dx = enemyPos.x - localPos.x;
+                float dz = enemyPos.z - localPos.z;
+                float distance = sqrt(dx*dx + dz*dz);
+                
+                if (distance < 50 && distance > 1) {
+                    CGPoint screenPos = WorldToScreen(enemyPos, screenSize);
+                    
+                    if (screenPos.x > 0 && screenPos.x < screenSize.width &&
+                        screenPos.y > 0 && screenPos.y < screenSize.height) {
+                        if (espBoxEnabled) DrawBox(screenPos, distance);
+                        if (espDistanceEnabled) DrawDistance(screenPos, distance);
+                        // if (espLineEnabled) DrawLine(...);
+                        // if (espHealthEnabled) DrawHealth(screenPos, ...);
+                    }
+                }
             }
         }
     }
@@ -263,6 +373,7 @@ static void StartGameLoop() {
     if (isGameReady) {
         [self setTitle:@"🔓 ON" forState:UIControlStateNormal];
         self.backgroundColor = [UIColor colorWithRed:0.0 green:0.8 blue:0.0 alpha:0.9];
+        SetupESP();
         StartGameLoop();
         NSLog(@"✅ Cheats activés");
         
@@ -272,6 +383,7 @@ static void StartGameLoop() {
     } else {
         [self setTitle:@"🔒 OFF" forState:UIControlStateNormal];
         self.backgroundColor = [UIColor colorWithRed:0.0 green:0.6 blue:0.0 alpha:0.85];
+        ClearESP();
         NSLog(@"❌ Cheats désactivés");
         
         for (UIView *btn in allButtons) {
