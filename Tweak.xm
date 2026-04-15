@@ -180,16 +180,22 @@ static void DrawDistance(CGPoint pos, float distance) {
 static void UpdateGame() {
     if (!isGameReady) return;
     
+    // Vérification des offsets
+    if (!ValidatePointers()) return;
+    
     @autoreleasepool {
         void* localPlayer = GetLocalPlayer();
         if (!localPlayer) return;
         
-        // SPINBOT
+        // SPINBOT - avec vérification
         if (spinbotEnabled) {
             quaternion_t rot = GetRotationQuat(localPlayer);
-            float yaw = QuaternionToYaw(rot);
-            yaw += 30.0f;
-            SetRotationQuat(localPlayer, YawToQuaternion(yaw));
+            // Vérifier que la rotation est valide (pas de valeurs NaN)
+            if (!isnan(rot.x) && !isnan(rot.y) && !isnan(rot.z) && !isnan(rot.w)) {
+                float yaw = QuaternionToYaw(rot);
+                yaw += 30.0f;
+                SetRotationQuat(localPlayer, YawToQuaternion(yaw));
+            }
         }
         // AIMBOT
         else if (aimbotEnabled) {
@@ -200,7 +206,7 @@ static void UpdateGame() {
             
             int playerCount = 0;
             void** players = GetPlayersList(&playerCount);
-            if (!players) return;
+            if (!players || playerCount == 0) return;
             
             float closestAngle = 360.0f;
             vec3_t closestEnemyPos = {0,0,0};
@@ -209,7 +215,9 @@ static void UpdateGame() {
             for (int i = 0; i < playerCount && i < 50; i++) {
                 void* player = players[i];
                 if (!player || player == localPlayer) continue;
-                if (GetTeam(player) == localTeam) continue;
+                
+                int team = GetTeam(player);
+                if (team == localTeam) continue;
                 
                 vec3_t enemyPos = GetPosition(player);
                 float dx = enemyPos.x - localPos.x;
@@ -230,13 +238,16 @@ static void UpdateGame() {
             }
         }
         
-        // ESP
-        if (espBoxEnabled || espLineEnabled || espDistanceEnabled || espHealthEnabled) {
+        // ESP - uniquement si activé et que la caméra existe
+        if ((espBoxEnabled || espLineEnabled || espDistanceEnabled || espHealthEnabled)) {
+            void* camera = GetMainCamera();
+            if (!camera) return;
+            
             ClearESP();
             
             int playerCount = 0;
             void** players = GetPlayersList(&playerCount);
-            if (!players) return;
+            if (!players || playerCount == 0) return;
             
             vec3_t localPos = GetPosition(localPlayer);
             int localTeam = GetTeam(localPlayer);
@@ -245,7 +256,9 @@ static void UpdateGame() {
             for (int i = 0; i < playerCount && i < 50; i++) {
                 void* player = players[i];
                 if (!player || player == localPlayer) continue;
-                if (GetTeam(player) == localTeam) continue;
+                
+                int team = GetTeam(player);
+                if (team == localTeam) continue;
                 
                 vec3_t enemyPos = GetPosition(player);
                 float dx = enemyPos.x - localPos.x;
