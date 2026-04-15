@@ -23,7 +23,6 @@ BOOL spinbotEnabled = NO;
 
 static NSMutableArray *allButtons = nil;
 static UIButton *secretButton = nil;
-static BOOL buttonsHidden = NO;
 static NSTimer *gameTimer = nil;
 
 static BOOL isGameReady = NO;
@@ -60,10 +59,11 @@ static int GetTeam(void* player) {
     return func ? func(player) : 0;
 }
 
-static float GetHealth(void* player) {
-    float (*func)(void*) = (float (*)(void*))OFFSET_GET_HEALTH;
-    return func ? func(player) : 0;
-}
+// GetHealth commentée (pas utilisée)
+// static float GetHealth(void* player) {
+//     float (*func)(void*) = (float (*)(void*))OFFSET_GET_HEALTH;
+//     return func ? func(player) : 0;
+// }
 
 static quaternion_t GetRotationQuat(void* player) {
     void* transform = GetTransform(player);
@@ -95,18 +95,18 @@ static quaternion_t YawToQuaternion(float yaw) {
     return q;
 }
 
-// ============ CAMERA ============
-static void* GetMainCamera() {
-    void* (*func)() = (void* (*)())OFFSET_CAMERA_GET_MAIN;
-    return func ? func() : NULL;
-}
-
-static vec3_t WorldToScreenPoint(vec3_t worldPos) {
-    vec3_t (*func)(void*, vec3_t) = (vec3_t (*)(void*, vec3_t))OFFSET_WORLD_TO_SCREEN;
-    void* camera = GetMainCamera();
-    if (!camera) return (vec3_t){0,0,0};
-    return func ? func(camera, worldPos) : (vec3_t){0,0,0};
-}
+// ============ CAMERA (commentée car pas utilisée) ============
+// static void* GetMainCamera() {
+//     void* (*func)() = (void* (*)())OFFSET_CAMERA_GET_MAIN;
+//     return func ? func() : NULL;
+// }
+// 
+// static vec3_t WorldToScreenPoint(vec3_t worldPos) {
+//     vec3_t (*func)(void*, vec3_t) = (vec3_t (*)(void*, vec3_t))OFFSET_WORLD_TO_SCREEN;
+//     void* camera = GetMainCamera();
+//     if (!camera) return (vec3_t){0,0,0};
+//     return func ? func(camera, worldPos) : (vec3_t){0,0,0};
+// }
 
 // ============ UPDATE GAME ============
 static void UpdateGame() {
