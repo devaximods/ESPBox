@@ -176,21 +176,17 @@ static void DrawDistance(CGPoint pos, float distance) {
     });
 }
 
-// ============ UPDATE GAME ============
+// ============ UPDATE GAME SÉCURISÉ ============
 static void UpdateGame() {
     if (!isGameReady) return;
-    
-    // Vérification des offsets
-    if (!ValidatePointers()) return;
     
     @autoreleasepool {
         void* localPlayer = GetLocalPlayer();
         if (!localPlayer) return;
         
-        // SPINBOT - avec vérification
+        // SPINBOT
         if (spinbotEnabled) {
             quaternion_t rot = GetRotationQuat(localPlayer);
-            // Vérifier que la rotation est valide (pas de valeurs NaN)
             if (!isnan(rot.x) && !isnan(rot.y) && !isnan(rot.z) && !isnan(rot.w)) {
                 float yaw = QuaternionToYaw(rot);
                 yaw += 30.0f;
@@ -238,8 +234,8 @@ static void UpdateGame() {
             }
         }
         
-        // ESP - uniquement si activé et que la caméra existe
-        if ((espBoxEnabled || espLineEnabled || espDistanceEnabled || espHealthEnabled)) {
+        // ESP
+        if (espBoxEnabled || espLineEnabled || espDistanceEnabled || espHealthEnabled) {
             void* camera = GetMainCamera();
             if (!camera) return;
             
