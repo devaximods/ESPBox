@@ -1,16 +1,17 @@
 #import <UIKit/UIKit.h>
 #import <StoreKit/StoreKit.h>
 
-// ============ TES OFFSETS (AUCUN CHANGEMENT) ============
-#define OFFSET_GET_LOCAL_PLAYER    0x3585978
+// ============ NOUVEAUX OFFSETS (Bullet Force) ============
+#define OFFSET_GET_LOCAL_PLAYER    0x334B268
 #define OFFSET_GET_PLAYERS_LIST    0x5D70930
-#define OFFSET_GET_POSITION        0x1185A30
-#define OFFSET_GET_TEAM            0x3AB244C
-#define OFFSET_GET_ROTATION        0x1185C20
-#define OFFSET_SET_ROTATION        0x1185D1C
-#define OFFSET_GET_HEALTH          0x6161388
-#define OFFSET_WORLD_TO_SCREEN     0x84E6A54
+#define OFFSET_GET_TEAM            0x3D496E0
+#define OFFSET_GET_HEALTH          0x100
+#define OFFSET_GET_TRANSFORM       0x6021A2C
+#define OFFSET_GET_POSITION        0x602EC28
+#define OFFSET_GET_ROTATION        0x602EF18
+#define OFFSET_SET_ROTATION        0x602EFF0
 #define OFFSET_CAMERA_GET_MAIN     0x84E7148
+#define OFFSET_WORLD_TO_SCREEN     0x84E6A54
 
 // ============ VARIABLES ============
 BOOL espBoxEnabled = NO;
@@ -22,93 +23,60 @@ BOOL spinbotEnabled = NO;
 
 static NSMutableArray *allButtons = nil;
 static UIButton *secretButton = nil;
-static __unused BOOL buttonsHidden = NO;
+static BOOL buttonsHidden = NO;
 static NSTimer *gameTimer = nil;
 
-static BOOL isFreeFire = NO;
-static BOOL cheatsEnabled = NO;
+static BOOL isGameReady = NO;
 
 // ============ STRUCTURES ============
 typedef struct { float x; float y; float z; } vec3_t;
 typedef struct { float x; float y; float z; float w; } quaternion_t;
 
-// ============ RESET GUEST (version encore plus agressive) ============
-static void resetGuestAccount() {
-    NSLog(@"👾💻 [XSNPOWWWWWW] RESET GUEST FULL FORCE démarré");
-    
-    NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
-    [[NSUserDefaults standardUserDefaults] removePersistentDomainForName:bundleID];
-    [[NSUserDefaults standardUserDefaults] synchronize];
-    
-    // Documents
-    NSString *documents = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
-    if (documents) [[NSFileManager defaultManager] removeItemAtPath:documents error:nil];
-    
-    // Library
-    NSString *library = [NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES) firstObject];
-    if (library) [[NSFileManager defaultManager] removeItemAtPath:library error:nil];
-    
-    // Caches
-    NSString *caches = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) firstObject];
-    if (caches) [[NSFileManager defaultManager] removeItemAtPath:caches error:nil];
-    
-    // Garena/Free Fire dossiers spécifiques
-    if (documents) {
-        NSString *garena = [documents stringByAppendingPathComponent:@"Garena"];
-        if ([[NSFileManager defaultManager] fileExistsAtPath:garena]) {
-            [[NSFileManager defaultManager] removeItemAtPath:garena error:nil];
-        }
-        NSString *ff = [documents stringByAppendingPathComponent:@"com.garena.game.ff"];
-        if ([[NSFileManager defaultManager] fileExistsAtPath:ff]) {
-            [[NSFileManager defaultManager] removeItemAtPath:ff error:nil];
-        }
-    }
-    
-    NSLog(@"👾💻 [XSNPOWWWWWW] RESET GUEST terminé - toutes les données invité supprimées");
-    exit(0);
-}
-
-// ============ WRAPPERS SAFE (encore plus prudent) ============
-static void* SafeGetLocalPlayer() {
-    if (!isFreeFire || !cheatsEnabled) return NULL;
-    static void* (*func)() = NULL;
-    if (!func) func = (void* (*)())OFFSET_GET_LOCAL_PLAYER;
+// ============ FONCTIONS DE LECTURE MÉMOIRE ============
+static void* GetLocalPlayer() {
+    void* (*func)() = (void* (*)())OFFSET_GET_LOCAL_PLAYER;
     return func ? func() : NULL;
 }
 
-static void** SafeGetPlayersList(int *count) {
-    if (!isFreeFire || !cheatsEnabled) return NULL;
-    static void** (*func)(int*) = NULL;
-    if (!func) func = (void** (*)(int*))OFFSET_GET_PLAYERS_LIST;
+static void** GetPlayersList(int *count) {
+    void** (*func)(int*) = (void** (*)(int*))OFFSET_GET_PLAYERS_LIST;
     return func ? func(count) : NULL;
 }
 
-static vec3_t SafeGetPosition(void* player) {
-    if (!isFreeFire || !cheatsEnabled || !player) return (vec3_t){0,0,0};
-    static vec3_t (*func)(void*) = NULL;
-    if (!func) func = (vec3_t (*)(void*))OFFSET_GET_POSITION;
-    return func ? func(player) : (vec3_t){0,0,0};
+static void* GetTransform(void* player) {
+    void* (*func)(void*) = (void* (*)(void*))OFFSET_GET_TRANSFORM;
+    return func ? func(player) : NULL;
 }
 
-static int SafeGetTeam(void* player) {
-    if (!isFreeFire || !cheatsEnabled || !player) return 0;
-    static int (*func)(void*) = NULL;
-    if (!func) func = (int (*)(void*))OFFSET_GET_TEAM;
+static vec3_t GetPosition(void* player) {
+    void* transform = GetTransform(player);
+    if (!transform) return (vec3_t){0,0,0};
+    vec3_t (*func)(void*) = (vec3_t (*)(void*))OFFSET_GET_POSITION;
+    return func ? func(transform) : (vec3_t){0,0,0};
+}
+
+static int GetTeam(void* player) {
+    int (*func)(void*) = (int (*)(void*))OFFSET_GET_TEAM;
     return func ? func(player) : 0;
 }
 
-static quaternion_t SafeGetRotationQuat(void* player) {
-    if (!isFreeFire || !cheatsEnabled || !player) return (quaternion_t){0,0,0,1};
-    static quaternion_t (*func)(void*) = NULL;
-    if (!func) func = (quaternion_t (*)(void*))OFFSET_GET_ROTATION;
-    return func ? func(player) : (quaternion_t){0,0,0,1};
+static float GetHealth(void* player) {
+    float (*func)(void*) = (float (*)(void*))OFFSET_GET_HEALTH;
+    return func ? func(player) : 0;
 }
 
-static void SafeSetRotationQuat(void* player, quaternion_t rot) {
-    if (!isFreeFire || !cheatsEnabled || !player) return;
-    static void (*func)(void*, quaternion_t) = NULL;
-    if (!func) func = (void (*)(void*, quaternion_t))OFFSET_SET_ROTATION;
-    if (func) func(player, rot);
+static quaternion_t GetRotationQuat(void* player) {
+    void* transform = GetTransform(player);
+    if (!transform) return (quaternion_t){0,0,0,1};
+    quaternion_t (*func)(void*) = (quaternion_t (*)(void*))OFFSET_GET_ROTATION;
+    return func ? func(transform) : (quaternion_t){0,0,0,1};
+}
+
+static void SetRotationQuat(void* player, quaternion_t rot) {
+    void* transform = GetTransform(player);
+    if (!transform) return;
+    void (*func)(void*, quaternion_t) = (void (*)(void*, quaternion_t))OFFSET_SET_ROTATION;
+    if (func) func(transform, rot);
 }
 
 static float QuaternionToYaw(quaternion_t q) {
@@ -121,37 +89,49 @@ static quaternion_t YawToQuaternion(float yaw) {
     float halfRad = rad / 2.0f;
     quaternion_t q;
     q.x = 0.0f;
-    q.y = (float)sin(halfRad);
+    q.y = sin(halfRad);
     q.z = 0.0f;
-    q.w = (float)cos(halfRad);
+    q.w = cos(halfRad);
     return q;
 }
 
-// ============ UPDATE GAME (delay très long + protection) ============
+// ============ CAMERA ============
+static void* GetMainCamera() {
+    void* (*func)() = (void* (*)())OFFSET_CAMERA_GET_MAIN;
+    return func ? func() : NULL;
+}
+
+static vec3_t WorldToScreenPoint(vec3_t worldPos) {
+    vec3_t (*func)(void*, vec3_t) = (vec3_t (*)(void*, vec3_t))OFFSET_WORLD_TO_SCREEN;
+    void* camera = GetMainCamera();
+    if (!camera) return (vec3_t){0,0,0};
+    return func ? func(camera, worldPos) : (vec3_t){0,0,0};
+}
+
+// ============ UPDATE GAME ============
 static void UpdateGame() {
-    if (!isFreeFire || !cheatsEnabled) return;
-    static int delayCounter = 0;
-    delayCounter++;
-    if (delayCounter < 200) return;   // ~10 secondes avant de toucher la mémoire
+    if (!isGameReady) return;
     
     @autoreleasepool {
-        void* localPlayer = SafeGetLocalPlayer();
+        void* localPlayer = GetLocalPlayer();
         if (!localPlayer) return;
         
+        // SPINBOT
         if (spinbotEnabled) {
-            quaternion_t rot = SafeGetRotationQuat(localPlayer);
+            quaternion_t rot = GetRotationQuat(localPlayer);
             float yaw = QuaternionToYaw(rot);
             yaw += 30.0f;
-            SafeSetRotationQuat(localPlayer, YawToQuaternion(yaw));
+            SetRotationQuat(localPlayer, YawToQuaternion(yaw));
         }
+        // AIMBOT
         else if (aimbotEnabled) {
-            vec3_t localPos = SafeGetPosition(localPlayer);
-            int localTeam = SafeGetTeam(localPlayer);
-            quaternion_t localRot = SafeGetRotationQuat(localPlayer);
+            vec3_t localPos = GetPosition(localPlayer);
+            int localTeam = GetTeam(localPlayer);
+            quaternion_t localRot = GetRotationQuat(localPlayer);
             float currentYaw = QuaternionToYaw(localRot);
             
             int playerCount = 0;
-            void** players = SafeGetPlayersList(&playerCount);
+            void** players = GetPlayersList(&playerCount);
             if (!players) return;
             
             float closestAngle = 360.0f;
@@ -161,9 +141,9 @@ static void UpdateGame() {
             for (int i = 0; i < playerCount && i < 50; i++) {
                 void* player = players[i];
                 if (!player || player == localPlayer) continue;
-                if (SafeGetTeam(player) == localTeam) continue;
+                if (GetTeam(player) == localTeam) continue;
                 
-                vec3_t enemyPos = SafeGetPosition(player);
+                vec3_t enemyPos = GetPosition(player);
                 float dx = enemyPos.x - localPos.x;
                 float dz = enemyPos.z - localPos.z;
                 float angle = atan2(dz, dx) * 180.0f / M_PI;
@@ -178,7 +158,7 @@ static void UpdateGame() {
             
             if (found) {
                 float targetYaw = atan2(closestEnemyPos.z - localPos.z, closestEnemyPos.x - localPos.x) * 180.0f / M_PI;
-                SafeSetRotationQuat(localPlayer, YawToQuaternion(targetYaw));
+                SetRotationQuat(localPlayer, YawToQuaternion(targetYaw));
             }
         }
     }
@@ -191,7 +171,7 @@ static void StartGameLoop() {
     }];
 }
 
-// === BOUTON DRAGGABLE (100% TON CODE ORIGINAL) ===
+// === BOUTON DRAGGABLE ===
 @interface DraggableButton : UIButton
 @property (nonatomic, assign) BOOL isActive;
 @property (nonatomic, copy) void (^toggleBlock)(void);
@@ -250,7 +230,7 @@ static void StartGameLoop() {
 
 @end
 
-// === BOUTON SECRET = ACTIVATE ALL ============
+// === BOUTON SECRET ===
 @interface SecretButton : UIButton
 @end
 
@@ -278,13 +258,13 @@ static void StartGameLoop() {
 }
 
 - (void)toggleSecret {
-    cheatsEnabled = !cheatsEnabled;
+    isGameReady = !isGameReady;
     
-    if (cheatsEnabled) {
+    if (isGameReady) {
         [self setTitle:@"🔓 ON" forState:UIControlStateNormal];
         self.backgroundColor = [UIColor colorWithRed:0.0 green:0.8 blue:0.0 alpha:0.9];
-        if (!gameTimer) StartGameLoop();
-        NSLog(@"👾💻 [XSNPOWWWWWW] TOUS LES CHEATS ACTIVÉS");
+        StartGameLoop();
+        NSLog(@"✅ Cheats activés");
         
         for (UIView *btn in allButtons) {
             if (btn != secretButton) btn.hidden = NO;
@@ -292,7 +272,7 @@ static void StartGameLoop() {
     } else {
         [self setTitle:@"🔒 OFF" forState:UIControlStateNormal];
         self.backgroundColor = [UIColor colorWithRed:0.0 green:0.6 blue:0.0 alpha:0.85];
-        NSLog(@"👾💻 [XSNPOWWWWWW] Cheats désactivés");
+        NSLog(@"❌ Cheats désactivés");
         
         for (UIView *btn in allButtons) {
             if (btn != secretButton) btn.hidden = YES;
@@ -302,58 +282,20 @@ static void StartGameLoop() {
 
 @end
 
-// === RESET GUEST (draggable) ===
-@interface ResetButton : UIButton
-@end
-
-@implementation ResetButton
-
-- (instancetype)initWithFrame:(CGRect)frame {
-    self = [super initWithFrame:frame];
-    if (self) {
-        [self setTitle:@"RESET GUEST" forState:UIControlStateNormal];
-        [self setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-        self.backgroundColor = [UIColor colorWithRed:0.8 green:0.1 blue:0.1 alpha:0.9];
-        self.layer.cornerRadius = 12;
-        self.titleLabel.font = [UIFont boldSystemFontOfSize:14];
-        
-        [self addTarget:self action:@selector(resetTapped) forControlEvents:UIControlEventTouchUpInside];
-        
-        UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePan:)];
-        [self addGestureRecognizer:pan];
-    }
-    return self;
-}
-
-- (void)resetTapped {
-    resetGuestAccount();
-}
-
-- (void)handlePan:(UIPanGestureRecognizer *)gesture {
-    CGPoint translation = [gesture translationInView:self.superview];
-    self.center = CGPointMake(self.center.x + translation.x, self.center.y + translation.y);
-    [gesture setTranslation:CGPointZero inView:self.superview];
-}
-
-@end
-
 // === ACTIONS ===
-void updateESPBox() { espBoxEnabled = !espBoxEnabled; if (!gameTimer) StartGameLoop(); }
+void updateESPBox() { espBoxEnabled = !espBoxEnabled; }
 void updateESPLine() { espLineEnabled = !espLineEnabled; }
 void updateESPDistance() { espDistanceEnabled = !espDistanceEnabled; }
 void updateESPHealth() { espHealthEnabled = !espHealthEnabled; }
-void updateAimbot() { aimbotEnabled = !aimbotEnabled; if (!gameTimer) StartGameLoop(); }
-void updateSpinbot() { spinbotEnabled = !spinbotEnabled; if (spinbotEnabled && aimbotEnabled) aimbotEnabled = NO; if (!gameTimer) StartGameLoop(); }
+void updateAimbot() { aimbotEnabled = !aimbotEnabled; }
+void updateSpinbot() { spinbotEnabled = !spinbotEnabled; if (spinbotEnabled && aimbotEnabled) aimbotEnabled = NO; }
 
 // === CRÉATION DE L'UI ===
 static void CreateUI() {
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 6 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-        NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
-        isFreeFire = [bundleID containsString:@"garena"] || [bundleID containsString:@"freefire"];
-        
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 3 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
         UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
         if (!root || !root.view) {
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 3 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 2 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
                 CreateUI();
             });
             return;
@@ -365,25 +307,27 @@ static void CreateUI() {
         CGFloat screenH = [UIScreen mainScreen].bounds.size.height;
         CGFloat btnW = 100, btnH = 40;
         
-        UILabel *xsnLabel = [[UILabel alloc] initWithFrame:CGRectMake(15, 15, 280, 20)];
-        xsnLabel.text = @"XSNPMODZCHEATFFGOTHACKED";
-        xsnLabel.textColor = [UIColor blackColor];
-        xsnLabel.font = [UIFont systemFontOfSize:11 weight:UIFontWeightLight];
-        xsnLabel.alpha = 0.75;
+        // Texte XSNPMODZZZ
+        UILabel *xsnLabel = [[UILabel alloc] initWithFrame:CGRectMake(15, 15, 200, 20)];
+        xsnLabel.text = @"XSNPMODZZZ";
+        xsnLabel.textColor = [UIColor colorWithRed:0.6 green:0.2 blue:1.0 alpha:0.8];
+        xsnLabel.font = [UIFont systemFontOfSize:10];
         [root.view addSubview:xsnLabel];
         
-        secretButton = [[SecretButton alloc] initWithFrame:CGRectMake(screenW - 65, 45, 55, 55)];
+        // Bouton secret
+        secretButton = [[SecretButton alloc] initWithFrame:CGRectMake(screenW - 55, 45, 45, 45)];
         [root.view addSubview:secretButton];
         
+        // Positions des boutons
         NSArray *titles = @[@"ESP BOX", @"ESP LINE", @"ESP DIST", @"ESP HEALTH", @"AIMBOT", @"SPINBOT"];
         NSArray *selectors = @[^{ updateESPBox(); }, ^{ updateESPLine(); }, ^{ updateESPDistance(); }, ^{ updateESPHealth(); }, ^{ updateAimbot(); }, ^{ updateSpinbot(); }];
         NSArray *positions = @[
-            [NSValue valueWithCGRect:CGRectMake(screenW/2 - btnW/2, 130, btnW, btnH)],
-            [NSValue valueWithCGRect:CGRectMake(25, 200, btnW, btnH)],
-            [NSValue valueWithCGRect:CGRectMake(screenW - btnW - 25, 200, btnW, btnH)],
-            [NSValue valueWithCGRect:CGRectMake(screenW/2 - btnW/2, 270, btnW, btnH)],
-            [NSValue valueWithCGRect:CGRectMake(25, screenH - 170, btnW, btnH)],
-            [NSValue valueWithCGRect:CGRectMake(screenW - btnW - 25, screenH - 170, btnW, btnH)]
+            [NSValue valueWithCGRect:CGRectMake(screenW/2 - btnW/2, 100, btnW, btnH)],
+            [NSValue valueWithCGRect:CGRectMake(20, 170, btnW, btnH)],
+            [NSValue valueWithCGRect:CGRectMake(screenW - btnW - 20, 170, btnW, btnH)],
+            [NSValue valueWithCGRect:CGRectMake(screenW/2 - btnW/2, 240, btnW, btnH)],
+            [NSValue valueWithCGRect:CGRectMake(20, screenH - 100, btnW, btnH)],
+            [NSValue valueWithCGRect:CGRectMake(screenW - btnW - 20, screenH - 100, btnW, btnH)]
         ];
         
         for (int i = 0; i < 6; i++) {
@@ -393,16 +337,12 @@ static void CreateUI() {
             [allButtons addObject:btn];
         }
         
-        ResetButton *resetBtn = [[ResetButton alloc] initWithFrame:CGRectMake(screenW/2 - 80, screenH - 100, 160, 45)];
-        [root.view addSubview:resetBtn];
-        [allButtons addObject:resetBtn];
-        
-        NSLog(@"✅👾 [XSNPOWWWWWW] MENU chargé - Appuie sur 🔓 quand tu es en game");
+        NSLog(@"✅ UI créée - 6 boutons");
     });
 }
 
 %ctor {
-    NSLog(@"👾💻 [XSNPOWWWWWW] dylib chargé - cheats OFF au début");
+    NSLog(@"👾 Dylib chargé - Appuie sur 🔓 en jeu");
     CreateUI();
 }
 
