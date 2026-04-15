@@ -31,6 +31,20 @@ static UIView *espContainer = nil;
 typedef struct { float x; float y; float z; } vec3_t;
 typedef struct { float x; float y; float z; float w; } quaternion_t;
 
+// ============ FONCTION POUR OBTENIR LA KEY WINDOW (iOS 13+) ============
+static UIWindow* GetKeyWindow() {
+    if (@available(iOS 13, *)) {
+        for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
+            if (scene.activationState == UISceneActivationStateForegroundActive) {
+                for (UIWindow *window in scene.windows) {
+                    if (window.isKeyWindow) return window;
+                }
+            }
+        }
+    }
+    return [UIApplication sharedApplication].keyWindow;
+}
+
 // ============ FONCTIONS MÉMOIRE ============
 static void* GetLocalPlayer() {
     void* (*func)() = (void* (*)())OFFSET_GET_LOCAL_PLAYER;
@@ -105,7 +119,7 @@ static CGPoint WorldToScreen(vec3_t worldPos, CGSize screenSize) {
 
 static void SetupESP() {
     dispatch_async(dispatch_get_main_queue(), ^{
-        UIWindow *keyWindow = [UIApplication sharedApplication].keyWindow;
+        UIWindow *keyWindow = GetKeyWindow();
         if (!keyWindow) return;
         
         if (!espContainer) {
@@ -146,10 +160,6 @@ static void DrawBox(CGPoint center, float distance) {
     });
 }
 
-static void DrawLine(CGPoint from, CGPoint to) {
-    // À implémenter
-}
-
 static void DrawDistance(CGPoint pos, float distance) {
     if (!espContainer) return;
     
@@ -166,23 +176,7 @@ static void DrawDistance(CGPoint pos, float distance) {
     });
 }
 
-static void DrawHealth(CGPoint pos, float health) {
-    if (!espContainer) return;
-    
-    UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(pos.x - 15, pos.y + 10, 30, 12)];
-    label.text = [NSString stringWithFormat:@"%.0f", health];
-    label.textColor = [UIColor greenColor];
-    label.font = [UIFont systemFontOfSize:9];
-    label.backgroundColor = [UIColor colorWithWhite:0 alpha:0.5];
-    label.textAlignment = NSTextAlignmentCenter;
-    label.tag = 999;
-    
-    dispatch_async(dispatch_get_main_queue(), ^{
-        [espContainer addSubview:label];
-    });
-}
-
-// ============ UPDATE GAME AVEC ESP ============
+// ============ UPDATE GAME ============
 static void UpdateGame() {
     if (!isGameReady) return;
     
@@ -236,7 +230,7 @@ static void UpdateGame() {
             }
         }
         
-        // ============ ESP ============
+        // ESP
         if (espBoxEnabled || espLineEnabled || espDistanceEnabled || espHealthEnabled) {
             ClearESP();
             
@@ -265,8 +259,6 @@ static void UpdateGame() {
                         screenPos.y > 0 && screenPos.y < screenSize.height) {
                         if (espBoxEnabled) DrawBox(screenPos, distance);
                         if (espDistanceEnabled) DrawDistance(screenPos, distance);
-                        // if (espLineEnabled) DrawLine(...);
-                        // if (espHealthEnabled) DrawHealth(screenPos, ...);
                     }
                 }
             }
@@ -405,7 +397,8 @@ void updateSpinbot() { spinbotEnabled = !spinbotEnabled; if (spinbotEnabled && a
 // === CRÉATION DE L'UI ===
 static void CreateUI() {
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 3 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-        UIViewController *root = [[[UIApplication sharedApplication] windows] firstObject].rootViewController;
+        UIWindow *keyWindow = GetKeyWindow();
+        UIViewController *root = keyWindow.rootViewController;
         if (!root || !root.view) {
             dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 2 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
                 CreateUI();
