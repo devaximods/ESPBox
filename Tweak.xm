@@ -31,7 +31,7 @@ static UIView *espContainer = nil;
 typedef struct { float x; float y; float z; } vec3_t;
 typedef struct { float x; float y; float z; float w; } quaternion_t;
 
-// ============ FONCTION POUR OBTENIR LA KEY WINDOW (iOS 13+) ============
+// ============ FONCTION POUR OBTENIR LA KEY WINDOW (iOS 13+ seulement) ============
 static UIWindow* GetKeyWindow() {
     if (@available(iOS 13, *)) {
         for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
@@ -42,7 +42,7 @@ static UIWindow* GetKeyWindow() {
             }
         }
     }
-    return [UIApplication sharedApplication].keyWindow;
+    return nil;
 }
 
 // ============ FONCTIONS MÉMOIRE ============
